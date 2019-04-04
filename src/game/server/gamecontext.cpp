@@ -12,13 +12,7 @@
 #include <game/version.h>
 
 #include "entities/character.h"
-#include "gamemodes/ctf.h"
-#include "gamemodes/dm.h"
-#include "gamemodes/lms.h"
-#include "gamemodes/lts.h"
-#include "gamemodes/mod.h"
-#include "gamemodes/tdm.h"
-#include "gamecontext.h"
+#include "gamemodes/catch64.h"
 #include "player.h"
 
 enum
@@ -277,6 +271,32 @@ void CGameContext::SendSettings(int ClientID)
 	Msg.m_TeamBalance = g_Config.m_SvTeambalanceTime != 0;
 	Msg.m_PlayerSlots = g_Config.m_SvPlayerSlots;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+}
+
+void CGameContext::SetKillerTeam(int ClientID, int Killer)
+{
+    int TeamID;
+    if(ClientID == Killer)
+        TeamID = ClientID;
+    else
+        TeamID = m_apPlayers[Killer]->GetTeamID();
+
+    if(!m_apPlayers[TeamID])
+        return;
+
+    m_apPlayers[ClientID]->SetTeamID(TeamID);
+    for(int p = 0; p < NUM_SKINPARTS; p++)
+	{
+		m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aaSkinPartNames[p];
+		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aUseCustomColors[p];
+		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aSkinPartColors[p];
+	}
+	SendSkinChange(ClientID, -1);
+}
+
+void CGameContext::ResetSkin(int ClientID)
+{
+    SetKillerTeam(ClientID, ClientID);
 }
 
 void CGameContext::SendSkinChange(int ClientID, int TargetID)
