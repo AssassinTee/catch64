@@ -13,7 +13,10 @@
 
 #include "entities/character.h"
 #include "gamemodes/catch64.h"
+#include "gamecontext.h"
 #include "player.h"
+
+#include "teamhandler.h"
 
 enum
 {
@@ -275,11 +278,7 @@ void CGameContext::SendSettings(int ClientID)
 
 void CGameContext::SetKillerTeam(int ClientID, int Killer)
 {
-    int TeamID;
-    if(ClientID == Killer)
-        TeamID = ClientID;
-    else
-        TeamID = m_apPlayers[Killer]->GetTeamID();
+    int TeamID = m_apPlayers[Killer]->GetTeamID();
 
     if(!m_apPlayers[TeamID])
         return;
@@ -287,7 +286,7 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer)
     m_apPlayers[ClientID]->SetTeamID(TeamID);
     for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-		m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aaSkinPartNames[p];
+		str_copy(m_apPlayers[TeamID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
@@ -296,7 +295,14 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer)
 
 void CGameContext::ResetSkin(int ClientID)
 {
-    SetKillerTeam(ClientID, ClientID);
+    m_apPlayers[ClientID]->SetTeamID(ClientID);
+    for(int p = 0; p < NUM_SKINPARTS; p++)
+	{
+		str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
+		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p];
+		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p];
+	}
+	SendSkinChange(ClientID, -1);
 }
 
 void CGameContext::SendSkinChange(int ClientID, int TargetID)
@@ -625,6 +631,26 @@ void CGameContext::OnClientEnter(int ClientID)
 	m_pController->OnPlayerConnect(m_apPlayers[ClientID]);
 
 	m_VoteUpdate = true;
+
+	//Overwrite original info
+	//Body
+	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[0] = 1;
+    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[0] = TeamHandler::getInstance().GetNewBodyColor(ClientID);
+
+	//Feet
+	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[4] = 1;
+    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[4] = TeamHandler::getInstance().GetNewFeetColor(ClientID);
+
+	//Save original Teaminfos
+    for(int p = 0; p < NUM_SKINPARTS; p++)
+	{
+        str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
+		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+	}
+	m_apPlayers[ClientID]->SetTeamID(ClientID);
+	//Set skin of hugest team
+	//ResetSkin(ClientID);
 
 	// update client infos (others before local)
 	CNetMsg_Sv_ClientInfo NewClientInfoMsg;
@@ -1488,7 +1514,7 @@ void CGameContext::OnInit()
 	m_Collision.Init(&m_Layers);
 
 	// select gametype
-	if(str_comp_nocase(g_Config.m_SvGametype, "mod") == 0)
+	/*if(str_comp_nocase(g_Config.m_SvGametype, "mod") == 0)
 		m_pController = new CGameControllerMOD(this);
 	else if(str_comp_nocase(g_Config.m_SvGametype, "ctf") == 0)
 		m_pController = new CGameControllerCTF(this);
@@ -1499,7 +1525,8 @@ void CGameContext::OnInit()
 	else if(str_comp_nocase(g_Config.m_SvGametype, "tdm") == 0)
 		m_pController = new CGameControllerTDM(this);
 	else
-		m_pController = new CGameControllerDM(this);
+		m_pController = new CGameControllerDM(this);*/
+    m_pController = new CGameControllerCatch64(this);
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
