@@ -27,8 +27,10 @@ public:
 	void TryRespawn();
 	void Respawn();
 	void SetTeam(int Team, bool DoChatMsg=true);
-	int GetTeam() const { return m_Team; };
-	int GetCID() const { return m_ClientID; };
+	int GetTeam() const { return m_Team; }
+	int GetCID() const { return m_ClientID; }
+	int GetTeamID() const { return m_TeamID; }
+	void SetTeamID(int TeamID) { m_TeamID = TeamID; }
 	bool IsDummy() const { return m_Dummy; }
 
 	void Tick();
@@ -84,7 +86,7 @@ public:
 		char m_aaSkinPartNames[NUM_SKINPARTS][24];
 		int m_aUseCustomColors[NUM_SKINPARTS];
 		int m_aSkinPartColors[NUM_SKINPARTS];
-	} m_TeeInfos;
+	} m_TeeInfosOriginal, m_TeeInfos;
 
 	int m_RespawnTick;
 	int m_DieTick;
@@ -122,6 +124,7 @@ private:
 	//
 	bool m_Spawning;
 	int m_ClientID;
+	int m_TeamID;
 	int m_Team;
 	bool m_Dummy;
 
