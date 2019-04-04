@@ -291,6 +291,31 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer)
 		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
 	SendSkinChange(ClientID, -1);
+
+    char aBuf[128];
+    str_format(aBuf, sizeof(aBuf), "You are now in Team '%s' of player '%s'", TeamHandler::getInstance().GetTeamName(TeamID), Server()->ClientName(TeamID));
+
+	SendBroadcast(aBuf, ClientID);
+}
+
+void CGameContext::TestColor(int ColorID)
+{
+
+    int ClientID = 0;//Test ID
+    if(!m_apPlayers[ClientID])
+        return;
+    m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[0] = 1;
+    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[0] = TeamHandler::getInstance().GetNewBodyColor(ColorID);
+
+	//Feet
+	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[4] = 1;
+    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[4] = TeamHandler::getInstance().GetNewFeetColor(ColorID);
+
+    SendSkinChange(ClientID, -1);
+
+    char aBuf[128];
+    str_format(aBuf, sizeof(aBuf), "ColorID: '%d', ColorName: '%s'", ColorID, TeamHandler::getInstance().GetTeamName(ColorID));
+    SendBroadcast(aBuf, -1);
 }
 
 void CGameContext::ResetSkin(int ClientID)
@@ -496,6 +521,19 @@ void CGameContext::OnTick()
 	// copy tuning
 	m_World.m_Core.m_Tuning = m_Tuning;
 	m_World.Tick();
+
+	//#ifdef CONF_DEBUG
+    static int counter = 0;
+    static int color = 0;
+    if(counter == 0){
+        TestColor(color);
+        color++;
+        color%=64;
+    }
+    counter++;
+    counter%=50;
+
+	//#endif // CONF_DEBUG
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();

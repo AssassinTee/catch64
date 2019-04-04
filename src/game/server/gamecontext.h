@@ -145,6 +145,8 @@ public:
 	void ResetSkin(int ClientID);
 	void SendSkinChange(int ClientID, int TargetID);
 
+    void TestColor(int ColorID);
+
 	void SendGameMsg(int GameMsgID, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ParaI2, int ParaI3, int ClientID);
