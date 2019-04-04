@@ -451,6 +451,8 @@ bool IGameController::DoWincheckMatch()
 		// gather some stats
 		int Topscore = 0;
 		int TopscoreCount = 0;
+		int TopTeam = -1;
+		bool AllInOneTeam=true;
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(GameServer()->m_apPlayers[i])
@@ -462,12 +464,22 @@ bool IGameController::DoWincheckMatch()
 				}
 				else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
 					TopscoreCount++;
+
+                //calc if all players are in one Team
+                if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && AllInOneTeam)
+                {
+                    if(TopTeam == -1)
+                        TopTeam = GameServer()->m_apPlayers[i]->GetTeamID();
+                    else if(TopTeam != GameServer()->m_apPlayers[i]->GetTeamID())
+                        AllInOneTeam = false;
+                }
 			}
 		}
 
 		// check score win condition
 		if((m_GameInfo.m_ScoreLimit > 0 && Topscore >= m_GameInfo.m_ScoreLimit) ||
-			(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60))
+			(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60) ||
+			(AllInOneTeam))
 		{
 			if(TopscoreCount == 1)
 			{
@@ -485,7 +497,7 @@ void IGameController::ResetGame()
 {
 	// reset the game
 	GameServer()->m_World.m_ResetRequested = true;
-	
+
 	SetGameState(IGS_GAME_RUNNING);
 	m_GameStartTick = Server()->Tick();
 	m_SuddenDeath = 0;
@@ -510,7 +522,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 				// run warmup till there're enough players
 				m_GameState = GameState;
  				m_GameStateTimer = TIMER_INFINITE;
-		
+
 				// enable respawning in survival when activating warmup
 				if(m_GameFlags&GAMEFLAG_SURVIVAL)
 				{
@@ -549,7 +561,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 					m_GameState = GameState;
 					m_GameStateTimer = Timer*Server()->TickSpeed();
 				}
-		
+
 				// enable respawning in survival when activating warmup
 				if(m_GameFlags&GAMEFLAG_SURVIVAL)
 				{
@@ -915,7 +927,7 @@ void IGameController::ChangeMap(const char *pToMap)
 	if(m_GameState == IGS_WARMUP_GAME || m_GameState == IGS_WARMUP_USER)
 		SetGameState(IGS_GAME_RUNNING);
 	EndMatch();
-	
+
 	if(m_GameState != IGS_END_MATCH)
 	{
 		// game could not been ended, force cycle
