@@ -64,7 +64,7 @@ int TeamHandler::GetLValue(int ClientID)
 
 int TeamHandler::HSLtoInt(int H, int S, int L)
 {
-    int color;
+    int color = 0;
     color = (color&0xFF00FFFF) | (H << 16);
     color = (color&0xFFFF00FF) | (S << 8);
     color = (color&0xFFFFFF00) | L;
