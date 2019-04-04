@@ -1,6 +1,8 @@
 #ifndef GAME_SERVER_TEAMHANDLER_H
 #define GAME_SERVER_TEAMHANDLER_H
 
+#include <string>
+
 class TeamHandler
 {
 public:
@@ -18,7 +20,9 @@ public:
     int GetNewTeamColor(int ClientID);//returns HSV color
     int GetNewBodyColor(int ClientID);
     int GetNewFeetColor(int ClientID);
+    const char* GetTeamName(int ClientID);
 private:
+    std::string GetBasicColorName(int ClientID);
     TeamHandler(){}
     int GetHValue(int ClientID);
     int GetSValue(int ClientID);

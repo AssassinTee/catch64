@@ -10,13 +10,17 @@ int TeamHandler::GetNewTeamColor(int ClientID)
 
 int TeamHandler::GetNewBodyColor(int ClientID)
 {
-    if(ClientID < 48)
+    if(ClientID < 32)
         return GetNewTeamColor(ClientID);
+    else if(ClientID < 48)
+        return HSLtoInt(0, 0, 0);
     return HSLtoInt(0, 255, 255);
 }
 
 int TeamHandler::GetNewFeetColor(int ClientID)
 {
+    if(ClientID >= 16 && ClientID < 32)
+        return HSLtoInt(0, 255, 255);
     return GetNewTeamColor(ClientID);
 }
 
@@ -46,6 +50,56 @@ int TeamHandler::GetHValue(int ClientID)
     return 0;
 }
 
+const char* TeamHandler::GetTeamName(int ClientID)
+{
+    std::string basicname = GetBasicColorName(ClientID);
+    if(ClientID < 16)
+        return basicname.c_str();
+    else if(ClientID < 32)
+    {
+        basicname+="-";
+        basicname+="white";
+        return basicname.c_str();
+    }
+    else if(ClientID < 48)
+    {
+        std::string res = "black-";
+        res+=basicname;
+        return res.c_str();
+    }
+    else
+    {
+        std::string res = "white-";
+        res+=basicname;
+        return res.c_str();
+    }
+}
+
+std::string TeamHandler::GetBasicColorName(int ClientID)
+{
+    switch(ClientID%16)
+    {
+        case 0: return "cherry";
+        case 1: return "cyan";
+        case 2: return "emerald";
+        case 3: return "grape";
+        case 4: return "sunflower";
+        case 5: return "mint";
+        case 6: return "orchid";
+        case 7: return "lavender";
+        case 8: return "tangerine";
+        case 9: return "lime";
+        case 10: return "avocado";
+        case 11: return "pool";
+        case 12: return "sky";
+        case 13: return "eggplant";
+        case 14: return "violet";
+        case 15: return "pink";
+        default: break;
+    }
+    return "error";
+}
+
 int TeamHandler::GetSValue(int ClientID)
 {
     return 255;
@@ -53,12 +107,6 @@ int TeamHandler::GetSValue(int ClientID)
 
 int TeamHandler::GetLValue(int ClientID)
 {
-    if(ClientID < 16)
-        return 128;
-    else if(ClientID < 32)
-        return 64;
-    else if(ClientID < 48)
-        return 196;
     return 128;
 }
 
