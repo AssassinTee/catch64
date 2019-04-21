@@ -868,7 +868,6 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/breton.json
   languages/bulgarian.json
   languages/catalan.json
-  languages/chinese.json
   languages/chuvash.json
   languages/czech.json
   languages/danish.json
@@ -902,6 +901,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/slovenian.json
   languages/spanish.json
   languages/swedish.json
+  languages/traditional_chinese.json
   languages/turkish.json
   languages/ukrainian.json
   mapres/bg_cloud1.png
@@ -912,6 +912,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   mapres/desert_mountains.png
   mapres/desert_mountains2.png
   mapres/desert_sun.png
+  mapres/easter.png
   mapres/generic_deathtiles.png
   mapres/generic_lamps.png
   mapres/generic_shadows.png
@@ -960,6 +961,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   skins/body/kitty.png
   skins/body/standard.png
   skins/body/x_ninja.png
+  skins/bot.png
   skins/brownbear.json
   skins/cammo.json
   skins/cammostripes.json
@@ -1340,6 +1342,8 @@ if(CLIENT)
     components/sounds.h
     components/spectator.cpp
     components/spectator.h
+    components/stats.cpp
+    components/stats.h
     components/voting.cpp
     components/voting.h
     gameclient.cpp
