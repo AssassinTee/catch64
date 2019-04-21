@@ -276,7 +276,7 @@ void CGameContext::SendSettings(int ClientID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGameContext::SetKillerTeam(int ClientID, int Killer)
+void CGameContext::SetKillerTeam(int ClientID, int Killer, bool silent)
 {
     int TeamID = m_apPlayers[Killer]->GetTeamID();
 
@@ -291,11 +291,19 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer)
 		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
 	SendSkinChange(ClientID, -1);
+	if(!silent) {
+        char aBuf[128];
+        if(ClientID == TeamID)
+        {
+            str_format(aBuf, sizeof(aBuf), "You are in Team '%s' (your team)", TeamHandler::getInstance().GetTeamName(TeamID));
+        }
+        else
+        {
+            str_format(aBuf, sizeof(aBuf), "You are now in Team '%s' of player '%s'", TeamHandler::getInstance().GetTeamName(TeamID), Server()->ClientName(TeamID));
+        }
 
-    char aBuf[128];
-    str_format(aBuf, sizeof(aBuf), "You are now in Team '%s' of player '%s'", TeamHandler::getInstance().GetTeamName(TeamID), Server()->ClientName(TeamID));
-
-	SendBroadcast(aBuf, ClientID);
+        SendBroadcast(aBuf, ClientID);
+    }
 }
 
 void CGameContext::TestColor(int ColorID)
@@ -523,7 +531,7 @@ void CGameContext::OnTick()
 	m_World.Tick();
 
 	//#ifdef CONF_DEBUG
-    static int counter = 0;
+    /*static int counter = 0;
     static int color = 0;
     if(counter == 0){
         TestColor(color);
@@ -531,7 +539,7 @@ void CGameContext::OnTick()
         color%=64;
     }
     counter++;
-    counter%=50;
+    counter%=50;*/
 
 	//#endif // CONF_DEBUG
 
@@ -682,7 +690,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	//Save original Teaminfos
     for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-        str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
+        str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
 	}

@@ -10,6 +10,7 @@
 #include "gamecontroller.h"
 #include "player.h"
 
+#include "teamhandler.h"
 
 IGameController::IGameController(CGameContext *pGameServer)
 {
@@ -481,6 +482,7 @@ bool IGameController::DoWincheckMatch()
 			(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60) ||
 			(AllInOneTeam))
 		{
+            m_TopTeam = TopTeam;
 			if(TopscoreCount == 1)
 			{
 				EndMatch();
@@ -503,6 +505,16 @@ void IGameController::ResetGame()
 	m_SuddenDeath = 0;
 
 	CheckGameInfo();
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+        if(GameServer()->m_apPlayers[i])
+        {
+            GameServer()->ResetSkin(i);
+            GameServer()->m_apPlayers[i]->SetTeamID(i);
+			GameServer()->SetKillerTeam(i, i, true);//Reset
+        }
+	}
 
 	// do team-balancing
 	DoTeamBalance();
@@ -650,6 +662,12 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			m_GameStateTimer = Timer*Server()->TickSpeed();
 			m_SuddenDeath = 0;
 			GameServer()->m_World.m_Paused = true;
+			if(GameServer()->m_apPlayers[m_TopTeam]) {
+                char aBuf[256];
+                str_format(aBuf, sizeof(aBuf), "Team '%s' of player '%s' won the round!", TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam));
+
+                GameServer()->SendBroadcast(aBuf, -1);
+			}
 		}
 	}
 }

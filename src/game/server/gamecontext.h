@@ -141,7 +141,7 @@ public:
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendMotd(int ClientID);
 	void SendSettings(int ClientID);
-	void SetKillerTeam(int ClientID, int Killer);
+	void SetKillerTeam(int ClientID, int Killer, bool silent=false);
 	void ResetSkin(int ClientID);
 	void SendSkinChange(int ClientID, int TargetID);
 
