@@ -1464,22 +1464,14 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gamecontext.h
   gamecontroller.cpp
   gamecontroller.h
-  gamemodes/ctf.cpp
-  gamemodes/ctf.h
-  gamemodes/dm.cpp
-  gamemodes/dm.h
-  gamemodes/lms.cpp
-  gamemodes/lms.h
-  gamemodes/lts.cpp
-  gamemodes/lts.h
-  gamemodes/mod.cpp
-  gamemodes/mod.h
-  gamemodes/tdm.cpp
-  gamemodes/tdm.h
+  gamemodes/catch64.cpp
+  gamemodes/catch64.h
   gameworld.cpp
   gameworld.h
   player.cpp
   player.h
+  teamhandler.cpp
+  teamhandler.h
 )
 set(GAME_GENERATED_SERVER
   src/generated/server_data.cpp
