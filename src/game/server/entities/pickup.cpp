@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
+#include <engine/shared/config.h>
 #include <generated/server_data.h>
 #include <game/server/gamecontext.h>
 #include <game/server/player.h>
@@ -28,6 +30,8 @@ void CPickup::Reset()
 void CPickup::Tick()
 {
 	// wait for respawn
+	if((!g_Config.m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!g_Config.m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR))
+        return;
 	if(m_SpawnTick > 0)
 	{
 		if(Server()->Tick() > m_SpawnTick)
@@ -136,7 +140,7 @@ void CPickup::TickPaused()
 
 void CPickup::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient) || ((!g_Config.m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!g_Config.m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR)))
 		return;
 
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));

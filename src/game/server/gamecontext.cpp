@@ -280,13 +280,13 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer, bool silent)
 {
     int TeamID = m_apPlayers[Killer]->GetTeamID();
 
-    if(!m_apPlayers[TeamID])
+    if(!m_apPlayers[TeamID] || m_apPlayers[ClientID]->GetTeam() == TeamID)
         return;
 
     m_apPlayers[ClientID]->SetTeamID(TeamID);
     for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-		str_copy(m_apPlayers[TeamID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
+		str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[TeamID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
@@ -331,7 +331,7 @@ void CGameContext::ResetSkin(int ClientID)
     m_apPlayers[ClientID]->SetTeamID(ClientID);
     for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-		str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
+		str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p];
 	}
@@ -690,7 +690,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	//Save original Teaminfos
     for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-        str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], 24);
+        str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
 	}
@@ -813,6 +813,13 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 	m_apPlayers[ClientID] = 0;
 
 	m_VoteUpdate = true;
+
+	//UpdateTeamcolors
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+        if(m_apPlayers[i] && m_apPlayers[i]->GetTeamID() == ClientID)
+            ResetSkin(i);
+	}
 }
 
 void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)

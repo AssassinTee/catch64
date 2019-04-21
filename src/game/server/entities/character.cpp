@@ -59,8 +59,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = WEAPON_GUN;
-	m_LastWeapon = WEAPON_HAMMER;
+	m_ActiveWeapon = (int)g_Config.m_SvStartWeapon;
+	m_LastWeapon = (int)g_Config.m_SvStartWeapon;
 	m_QueuedWeapon = -1;
 
 	m_pPlayer = pPlayer;
@@ -651,6 +651,10 @@ void CCharacter::Die(int Killer, int Weapon)
 	// we got to wait 0.5 secs before respawning
 	//m_Alive = false;
 	//m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+	if(Weapon == WEAPON_GAME)
+	{
+        m_Alive = false;
+	}
 	if(Killer == m_pPlayer->GetCID() || GameServer()->m_apPlayers[Killer]->GetTeamID() == GameServer()->m_apPlayers[m_pPlayer->GetCID()]->GetTeamID())
         return;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
@@ -674,11 +678,13 @@ void CCharacter::Die(int Killer, int Weapon)
 	//GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// this is for auto respawn after 3 secs
-	//m_pPlayer->m_DieTick = Server()->Tick();
+	if(Weapon == WEAPON_GAME) {
+        m_pPlayer->m_DieTick = Server()->Tick();
 
-	//GameServer()->m_World.RemoveEntity(this);
-	//GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
-	//GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+        GameServer()->m_World.RemoveEntity(this);
+        GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
+        GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+    }
 }
 
 bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weapon)
