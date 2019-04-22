@@ -12,6 +12,8 @@
 #include "eventhandler.h"
 #include "gameworld.h"
 
+#include <string>
+
 /*
 	Tick
 		Game Context (CGameContext::tick)
@@ -134,6 +136,8 @@ public:
 	void CreateDeath(vec2 Pos, int Who);
 	void CreateSound(vec2 Pos, int Sound, int64 Mask=-1);
 
+    //network command
+	void SendCommand(int ChatterClientID, const std::string& command);
 	// network
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
 	void SendBroadcast(const char *pText, int ClientID);

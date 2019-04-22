@@ -18,6 +18,9 @@
 
 #include "teamhandler.h"
 
+#include <sstream>
+#include <vector>
+
 enum
 {
 	RESET,
@@ -185,6 +188,46 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
+void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
+{
+	std::vector<std::string> messageList;
+    if(command == "cmdlist")
+    {
+        messageList.push_back("###Command-list###");
+        messageList.push_back("'!cmdlist'- show commands");
+        messageList.push_back("'!help' - show help");
+        messageList.push_back("'!info' - show mod information");
+    }
+    else if(command == "help")
+    {
+        messageList.push_back("###Help###");
+        messageList.push_back("You start in your team");
+        messageList.push_back("If you hit a player, he is in your team, too");
+        messageList.push_back("Very easy :D");
+    }
+    else if(command == "info")
+    {
+        messageList.push_back("###Info###");
+        messageList.push_back("Catch64 by AssassinTee");
+        messageList.push_back("You like it? Give me a Star on GitHub!");
+        messageList.push_back("https://github.com/AssassinTee/catch64");
+        messageList.push_back("You should use Client 0.7.3 or higher!")
+        std::stringstream ss;
+        ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
+        messageList.push_back(ss.str());
+    }
+    CNetMsg_Sv_Chat Msg;
+	Msg.m_Mode = CHAT_ALL;
+	Msg.m_ClientID = -1;
+
+	Msg.m_TargetID = -1;
+    for(auto it = messageList.begin(); it != messageList.end(); ++it)
+    {
+        Msg.m_pMessage = it->c_str();
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+    }
+}
+
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
 	char aBuf[256];
@@ -203,6 +246,20 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, aBufMode, aBuf);
 
+    /*Gamemod commands*/
+    if(Mode == CHAT_ALL && (pText[0] == '!' || pText[0] == '/'))
+    {
+        const std::vector<std::string> commands = {"cmdlist", "info", "help", "top5", "rank"};
+        for(auto it = commands.begin(); it != commands.end(); ++it)
+        {
+            if(!str_comp(pText, ("!"+(*it)).c_str()) || !str_comp(pText, ("/"+(*it)).c_str()))
+            {
+                //Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
+                SendCommand(ChatterClientID, *it);
+                return;
+            }
+        }
+    }
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = Mode;
