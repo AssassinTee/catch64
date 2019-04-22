@@ -211,7 +211,7 @@ void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
         messageList.push_back("Catch64 by AssassinTee");
         messageList.push_back("You like it? Give me a Star on GitHub!");
         messageList.push_back("https://github.com/AssassinTee/catch64");
-        messageList.push_back("You should use Client 0.7.3 or higher!")
+        messageList.push_back("You should use Client 0.7.3 or higher!");
         std::stringstream ss;
         ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
         messageList.push_back(ss.str());
