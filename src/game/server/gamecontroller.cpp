@@ -406,6 +406,7 @@ void IGameController::OnReset()
 				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
 			}
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
+			GameServer()->ResetSkin(i);
 		}
 	}
 }
@@ -464,7 +465,7 @@ bool IGameController::DoWincheckMatch()
 			(AllInOneTeam))
 		{
             m_TopTeam = TopTeam;
-			if(TopscoreCount == 1)
+			if(TopscoreCount == 1 || AllInOneTeam)
 			{
 				EndMatch();
 				return true;
