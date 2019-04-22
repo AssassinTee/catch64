@@ -30,7 +30,7 @@ public:
 	int GetTeam() const { return m_Team; }
 	int GetCID() const { return m_ClientID; }
 	int GetTeamID() const { return m_TeamID; }
-	void SetTeamID(int TeamID) { m_TeamID = TeamID; }
+	void SetTeamID(int TeamID) {if(TeamID > -1) m_TeamID = TeamID; }
 	bool IsDummy() const { return m_Dummy; }
 
 	void Tick();
