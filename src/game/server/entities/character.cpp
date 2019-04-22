@@ -651,11 +651,12 @@ void CCharacter::Die(int Killer, int Weapon)
 	// we got to wait 0.5 secs before respawning
 	//m_Alive = false;
 	//m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-	if(Weapon == WEAPON_GAME)
+	if(Weapon == WEAPON_WORLD || Weapon == WEAPON_GAME || Weapon == WEAPON_SELF)
 	{
         m_Alive = false;
+        m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	}
-	if(Killer == m_pPlayer->GetCID() || GameServer()->m_apPlayers[Killer]->GetTeamID() == GameServer()->m_apPlayers[m_pPlayer->GetCID()]->GetTeamID())
+	if(GameServer()->m_apPlayers[Killer]->GetTeamID() == GameServer()->m_apPlayers[m_pPlayer->GetCID()]->GetTeamID() && Killer != m_pPlayer->GetCID())
         return;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
@@ -678,12 +679,16 @@ void CCharacter::Die(int Killer, int Weapon)
 	//GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// this is for auto respawn after 3 secs
-	if(Weapon == WEAPON_GAME) {
+	if(Weapon == WEAPON_WORLD || Weapon == WEAPON_GAME || Weapon == WEAPON_SELF) {
         m_pPlayer->m_DieTick = Server()->Tick();
 
         GameServer()->m_World.RemoveEntity(this);
         GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
         GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+    }
+    else
+    {
+        GameServer()->SetKillerTeam(m_pPlayer->GetCID(), Killer);
     }
 }
 
@@ -692,6 +697,18 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	m_Core.m_Vel += Force;
 
 	Die(From, Weapon);
+    if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
+    {
+        CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
+        if (pChr)
+        {
+            pChr->m_EmoteType = EMOTE_HAPPY;
+            pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
+        }
+    }
+    m_EmoteType = EMOTE_PAIN;
+	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
+
 	return true;
     /*
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
