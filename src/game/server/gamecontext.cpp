@@ -1153,6 +1153,17 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*3 > Server()->Tick())
 				return;
+            else if(pPlayer->m_LastKillRequest+Server()->TickSpeed()*1 > Server()->Tick())
+                return;//don't send a message
+            else if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown > Server()->Tick())
+            {
+                pPlayer->m_LastKillRequest = Server()->Tick();
+                char aSelfkill[128];
+                int seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick())/Server()->TickSpeed();
+                str_format(aSelfkill, sizeof(aSelfkill), "You can't selfkill for '%d' second(s)", seconds);
+                SendChat(-1, CHAT_ALL, ClientID, aSelfkill);
+                return;
+            }
 
 			pPlayer->m_LastKill = Server()->Tick();
 			pPlayer->KillCharacter(WEAPON_SELF);
@@ -1167,8 +1178,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if(MsgID == NETMSGTYPE_CL_SKINCHANGE)
 		{
-			if(pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*5 > Server()->Tick())
-				return;
+			if(pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*5 > Server()->Tick()) {
+                return;
+			}
 
 			pPlayer->m_LastChangeInfo = Server()->Tick();
 			CNetMsg_Cl_SkinChange *pMsg = (CNetMsg_Cl_SkinChange *)pRawMsg;
