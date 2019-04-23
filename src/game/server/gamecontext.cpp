@@ -220,7 +220,7 @@ void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
 	Msg.m_Mode = CHAT_ALL;
 	Msg.m_ClientID = -1;
 
-	Msg.m_TargetID = -1;
+	Msg.m_TargetID = ChatterClientID;
     for(auto it = messageList.begin(); it != messageList.end(); ++it)
     {
         Msg.m_pMessage = it->c_str();
@@ -341,12 +341,10 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer, bool silent)
         return;
 
     m_apPlayers[ClientID]->SetTeamID(TeamID);
-    for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-		str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[TeamID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], 24);
-		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[TeamID]->m_TeeInfosOriginal.m_aUseCustomColors[p];
-		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[TeamID]->m_TeeInfosOriginal.m_aSkinPartColors[p];
-	}
+
+    //copy skin
+	copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[Killer]->m_TeeInfos);//copy Teaminfos from killer, original Teeinfo may be changed from player TeamID
+
 	SendSkinChange(ClientID, -1);
 	if(!silent) {
         char aBuf[128];
@@ -386,12 +384,9 @@ void CGameContext::TestColor(int ColorID)
 void CGameContext::ResetSkin(int ClientID)
 {
     m_apPlayers[ClientID]->SetTeamID(ClientID);
-    for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-		str_copy(m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], 24);
-		m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p];
-		m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p];
-	}
+
+    //copy skin
+	copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[ClientID]->m_TeeInfosOriginal);
 	SendSkinChange(ClientID, -1);
 }
 
@@ -729,13 +724,30 @@ void CGameContext::OnClientPredictedInput(int ClientID, void *pInput)
 	}
 }
 
+void CGameContext::ApplyStartColors(int ClientID, CPlayer::TeeInfos& src)
+{
+    //Save original skin
+    copy_skin(m_apPlayers[ClientID]->m_TeeInfosOriginal, src);
+
+    //Overwrite original info
+	//Body
+	m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[0] = 1;
+    m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[0] = TeamHandler::getInstance().GetNewBodyColor(ClientID);
+
+	//Feet
+	m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[4] = 1;
+    m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[4] = TeamHandler::getInstance().GetNewFeetColor(ClientID);
+
+
+}
+
 void CGameContext::OnClientEnter(int ClientID)
 {
 	m_pController->OnPlayerConnect(m_apPlayers[ClientID]);
 
 	m_VoteUpdate = true;
 
-	//Overwrite original info
+	/*//Overwrite original info
 	//Body
 	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[0] = 1;
     m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[0] = TeamHandler::getInstance().GetNewBodyColor(ClientID);
@@ -744,13 +756,18 @@ void CGameContext::OnClientEnter(int ClientID)
 	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[4] = 1;
     m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[4] = TeamHandler::getInstance().GetNewFeetColor(ClientID);
 
-	//Save original Teaminfos
-    for(int p = 0; p < NUM_SKINPARTS; p++)
+	//Save original Teaminfos*/
+    /*for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
         str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
 		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
-	}
+	}*/
+
+    //save original skin
+	ApplyStartColors(ClientID, m_apPlayers[ClientID]->m_TeeInfos);
+	copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[ClientID]->m_TeeInfosOriginal);
+
 	m_apPlayers[ClientID]->SetTeamID(ClientID);
 	//Set skin of hugest team
 	//ResetSkin(ClientID);
@@ -1158,19 +1175,20 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			for(int p = 0; p < NUM_SKINPARTS; p++)
 			{
-				str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p], 24);
-				pPlayer->m_TeeInfos.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
-				pPlayer->m_TeeInfos.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
+				str_copy(pPlayer->m_TeeInfosOriginal.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p], 24);
+				pPlayer->m_TeeInfosOriginal.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
+				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
-
-			// update all clients
-			for(int i = 0; i < MAX_CLIENTS; ++i)
+            ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
+            SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
+			// update all clients//don't update, the update will apply next round
+			/*for(int i = 0; i < MAX_CLIENTS; ++i)
 			{
 				if(!m_apPlayers[i] || (!Server()->ClientIngame(i) && !m_apPlayers[i]->IsDummy()) || Server()->GetClientVersion(i) < MIN_SKINCHANGE_CLIENTVERSION)
 					continue;
 
 				SendSkinChange(pPlayer->GetCID(), i);
-			}
+			}*/
 		}
 	}
 	else

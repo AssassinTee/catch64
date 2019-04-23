@@ -81,7 +81,7 @@ public:
 	int m_LastReadyChange;
 
 	// TODO: clean this up
-	struct
+	struct TeeInfos
 	{
 		char m_aaSkinPartNames[NUM_SKINPARTS][24];
 		int m_aUseCustomColors[NUM_SKINPARTS];
@@ -135,4 +135,13 @@ private:
 	bool m_ActiveSpecSwitch;
 };
 
+inline void copy_skin(CPlayer::TeeInfos& dst, CPlayer::TeeInfos& src)
+{
+    for(int p = 0; p < NUM_SKINPARTS; p++)
+    {
+        str_copy(dst.m_aaSkinPartNames[p], src.m_aaSkinPartNames[p], 24);
+        dst.m_aUseCustomColors[p] = src.m_aUseCustomColors[p];
+        dst.m_aSkinPartColors[p] = src.m_aSkinPartColors[p];
+    }
+}
 #endif

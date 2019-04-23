@@ -13,6 +13,7 @@
 #include "gameworld.h"
 
 #include <string>
+#include "player.h"
 
 /*
 	Tick
@@ -150,6 +151,7 @@ public:
 	void SendSkinChange(int ClientID, int TargetID);
 
     void TestColor(int ColorID);
+    void ApplyStartColors(int ClientID, CPlayer::TeeInfos& src);
 
 	void SendGameMsg(int GameMsgID, int ClientID);
 	void SendGameMsg(int GameMsgID, int ParaI1, int ClientID);
