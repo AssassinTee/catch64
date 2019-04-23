@@ -21,6 +21,9 @@
 #include <sstream>
 #include <vector>
 
+#include <stdlib.h>//rand
+#include <map>
+
 enum
 {
 	RESET,
@@ -747,30 +750,14 @@ void CGameContext::OnClientEnter(int ClientID)
 
 	m_VoteUpdate = true;
 
-	/*//Overwrite original info
-	//Body
-	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[0] = 1;
-    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[0] = TeamHandler::getInstance().GetNewBodyColor(ClientID);
-
-	//Feet
-	m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[4] = 1;
-    m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[4] = TeamHandler::getInstance().GetNewFeetColor(ClientID);
-
-	//Save original Teaminfos*/
-    /*for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-        str_copy(m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aaSkinPartNames[p], m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p], 24);
-		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
-		m_apPlayers[ClientID]->m_TeeInfosOriginal.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
-	}*/
-
     //save original skin
 	ApplyStartColors(ClientID, m_apPlayers[ClientID]->m_TeeInfos);
 	copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[ClientID]->m_TeeInfosOriginal);
 
 	m_apPlayers[ClientID]->SetTeamID(ClientID);
+
 	//Set skin of hugest team
-	//ResetSkin(ClientID);
+    SetStartTeam(ClientID);
 
 	// update client infos (others before local)
 	CNetMsg_Sv_ClientInfo NewClientInfoMsg;
@@ -832,6 +819,42 @@ void CGameContext::OnClientEnter(int ClientID)
 		Msg.m_Team = NewClientInfoMsg.m_Team;
 		Server()->SendPackMsg(&Msg, MSGFLAG_NOSEND, -1);
 	}
+}
+
+void CGameContext::SetStartTeam(int ClientID)
+{
+    //count people per teamid
+    std::map<int, int> teamcounts;
+    for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(m_apPlayers[i])
+		{
+            teamcounts[m_apPlayers[i]->GetTeamID()]++;
+		}
+	}
+
+    //find id of biggest teams
+	std::vector<int> resultteams;
+	int currentmax = 0;
+	for(auto it = teamcounts.begin(); it != teamcounts.end(); ++it)
+	{
+        if(it->second > currentmax)
+            resultteams.clear();
+
+        if(it->second >= currentmax)
+        {
+            currentmax = it->second;
+            resultteams.push_back(it->first);
+        }
+	}
+
+	//if the biggest team is bigger then 1 and the result teams are not empty, set change startteam
+	if(currentmax > 1 && !resultteams.empty())
+    {
+        int randomteam = resultteams[rand()%(resultteams.size())];
+        m_apPlayers[ClientID]->SetTeamID(randomteam);
+        copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[randomteam]->m_TeeInfosOriginal);
+    }
 }
 
 void CGameContext::OnClientConnected(int ClientID, bool Dummy, bool AsSpec)
