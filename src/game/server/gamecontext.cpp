@@ -224,7 +224,7 @@ void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
     for(auto it = messageList.begin(); it != messageList.end(); ++it)
     {
         Msg.m_pMessage = it->c_str();
-        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
     }
 }
 
