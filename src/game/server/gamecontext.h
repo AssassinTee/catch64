@@ -150,6 +150,8 @@ public:
 	void ResetSkin(int ClientID);
 	void SendSkinChange(int ClientID, int TargetID);
 
+	void SetStartTeam(int ClientID);
+
     void TestColor(int ColorID);
     void ApplyStartColors(int ClientID, CPlayer::TeeInfos& src);
 
