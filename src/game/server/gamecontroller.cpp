@@ -644,6 +644,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			GameServer()->m_World.m_Paused = true;
 			if(GameServer()->m_apPlayers[m_TopTeam]) {
                 char aBuf[256];
+                GameServer()->m_apPlayers[m_TopTeam]->m_Score+=g_Config.m_SvWinBonus;
                 str_format(aBuf, sizeof(aBuf), "Team '%s' of player '%s' won the round!", TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam));
 
                 GameServer()->SendBroadcast(aBuf, -1);
