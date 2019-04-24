@@ -886,6 +886,23 @@ void CGameContext::OnClientEnter(int ClientID)
 		Msg.m_Team = NewClientInfoMsg.m_Team;
 		Server()->SendPackMsg(&Msg, MSGFLAG_NOSEND, -1);
 	}
+
+	if(Server()->GetClientVersion(ClientID) < MIN_SKINCHANGE_CLIENTVERSION)
+	{
+        std::vector<std::string> messageList;
+        messageList.push_back("Your Client is too old, you may have troubles in this Mod");
+        messageList.push_back("Reqired 0.7.3 or higher");
+        CNetMsg_Sv_Chat Msg;
+        Msg.m_Mode = CHAT_ALL;
+        Msg.m_ClientID = -1;
+
+        Msg.m_TargetID = ClientID;
+        for(auto it = messageList.begin(); it != messageList.end(); ++it)
+        {
+            Msg.m_pMessage = it->c_str();
+            Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+        }
+    }
 }
 
 void CGameContext::SetStartTeam(int ClientID)
