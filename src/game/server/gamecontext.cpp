@@ -355,13 +355,15 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer, bool silent)
 	SendSkinChange(ClientID, -1);
 	if(!silent) {
         char aBuf[128];
+        char colorbuf[5];
+        TeamHandler::getInstance().HSLtoRGBString(TeamID, colorbuf);
         if(ClientID == TeamID)
         {
-            str_format(aBuf, sizeof(aBuf), "You are back in your team");
+            str_format(aBuf, sizeof(aBuf), "%s■■■^999 You are back in your team %s■■■", colorbuf, colorbuf);
         }
         else
         {
-            str_format(aBuf, sizeof(aBuf), "You are now in Team '%s'", Server()->ClientName(TeamID));
+            str_format(aBuf, sizeof(aBuf), "%s■■■^999 You are now in Team '%s' %s■■■" , colorbuf, Server()->ClientName(TeamID), colorbuf);
         }
 
         SendBroadcast(aBuf, ClientID);
