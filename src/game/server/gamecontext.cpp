@@ -395,15 +395,78 @@ void CGameContext::ResetSkin(int ClientID)
 
 void CGameContext::SendSkinChange(int ClientID, int TargetID)
 {
-	CNetMsg_Sv_SkinChange Msg;
-	Msg.m_ClientID = ClientID;
-	for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-		Msg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
-		Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
-		Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
-	}
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    if(TargetID == -1)
+    {
+        for(int i = 0; i < MAX_PLAYERS; ++i)
+        {
+            if(m_apPlayers[i] && !m_apPlayers[i]->IsDummy())
+                SendSkinChange(ClientID, i);
+        }
+    }
+    else if(Server()->GetClientVersion(TargetID) >= MIN_SKINCHANGE_CLIENTVERSION)//Send normal message
+    {
+        CNetMsg_Sv_SkinChange Msg;
+        Msg.m_ClientID = ClientID;
+        for(int p = 0; p < NUM_SKINPARTS; p++)
+        {
+            Msg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+        }
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    }
+    else//Old Client use old tricks
+    {
+        //You can't change skin of the player to himself :/
+        if(!m_apPlayers[TargetID] || TargetID == ClientID)
+            return;
+
+        //Info Message
+        CNetMsg_Sv_ClientInfo ClientInfoMsg;
+        ClientInfoMsg.m_ClientID = ClientID;
+        ClientInfoMsg.m_Local = 0;
+        ClientInfoMsg.m_Team = m_apPlayers[ClientID]->GetTeam();
+        ClientInfoMsg.m_pName = Server()->ClientName(ClientID);
+        ClientInfoMsg.m_pClan = Server()->ClientClan(ClientID);
+        ClientInfoMsg.m_Country = Server()->ClientCountry(ClientID);
+        ClientInfoMsg.m_Silent = true;
+
+        //Connection Message
+        CNetMsg_Sv_ClientInfo NewClientInfoMsg;
+        NewClientInfoMsg.m_ClientID = ClientID;
+        NewClientInfoMsg.m_Local = 0;
+        NewClientInfoMsg.m_Team = m_apPlayers[ClientID]->GetTeam();
+        NewClientInfoMsg.m_pName = Server()->ClientName(ClientID);
+        NewClientInfoMsg.m_pClan = Server()->ClientClan(ClientID);
+        NewClientInfoMsg.m_Country = Server()->ClientCountry(ClientID);
+        NewClientInfoMsg.m_Silent = true;
+
+        //Fill in Skindata
+        for(int p = 0; p < 6; p++)
+        {
+            ClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            ClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            ClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+
+
+            NewClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            NewClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            NewClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+        }
+
+        //Disconnect Message
+        CNetMsg_Sv_ClientDrop Msg;
+        Msg.m_ClientID = ClientID;
+        Msg.m_pReason = "colorchange";
+        Msg.m_Silent = true;
+
+        /*RECONNECT*/
+        //Send Disconnect
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+        //Send joining of new player
+        Server()->SendPackMsg(&NewClientInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+        Server()->SendPackMsg(&ClientInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    }
 }
 
 void CGameContext::SendGameMsg(int GameMsgID, int ClientID)
