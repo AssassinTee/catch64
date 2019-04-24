@@ -193,6 +193,10 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 
 void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
 {
+    if(m_apPlayers[ChatterClientID]->m_LastCommand && m_apPlayers[ChatterClientID]->m_LastCommand+Server()->TickSpeed()*0.5 > Server()->Tick())
+        return;
+    m_apPlayers[ChatterClientID]->m_LastCommand = Server()->Tick();
+
 	std::vector<std::string> messageList;
     if(command == "cmdlist")
     {
@@ -351,13 +355,15 @@ void CGameContext::SetKillerTeam(int ClientID, int Killer, bool silent)
 	SendSkinChange(ClientID, -1);
 	if(!silent) {
         char aBuf[128];
+        char colorbuf[5];
+        TeamHandler::getInstance().HSLtoRGBString(TeamID, colorbuf);
         if(ClientID == TeamID)
         {
-            str_format(aBuf, sizeof(aBuf), "You are back in your team");
+            str_format(aBuf, sizeof(aBuf), "%s■■■^999 You are back in your team %s■■■", colorbuf, colorbuf);
         }
         else
         {
-            str_format(aBuf, sizeof(aBuf), "You are now in Team '%s'", Server()->ClientName(TeamID));
+            str_format(aBuf, sizeof(aBuf), "%s■■■^999 You are now in Team '%s' %s■■■" , colorbuf, Server()->ClientName(TeamID), colorbuf);
         }
 
         SendBroadcast(aBuf, ClientID);
@@ -395,15 +401,78 @@ void CGameContext::ResetSkin(int ClientID)
 
 void CGameContext::SendSkinChange(int ClientID, int TargetID)
 {
-	CNetMsg_Sv_SkinChange Msg;
-	Msg.m_ClientID = ClientID;
-	for(int p = 0; p < NUM_SKINPARTS; p++)
-	{
-		Msg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
-		Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
-		Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
-	}
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    if(TargetID == -1)
+    {
+        for(int i = 0; i < MAX_PLAYERS; ++i)
+        {
+            if(m_apPlayers[i] && !m_apPlayers[i]->IsDummy())
+                SendSkinChange(ClientID, i);
+        }
+    }
+    else if(Server()->GetClientVersion(TargetID) >= MIN_SKINCHANGE_CLIENTVERSION)//Send normal message
+    {
+        CNetMsg_Sv_SkinChange Msg;
+        Msg.m_ClientID = ClientID;
+        for(int p = 0; p < NUM_SKINPARTS; p++)
+        {
+            Msg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+        }
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    }
+    else//Old Client use old tricks
+    {
+        //You can't change skin of the player to himself :/
+        if(!m_apPlayers[TargetID] || TargetID == ClientID)
+            return;
+
+        //Info Message
+        CNetMsg_Sv_ClientInfo ClientInfoMsg;
+        ClientInfoMsg.m_ClientID = ClientID;
+        ClientInfoMsg.m_Local = 0;
+        ClientInfoMsg.m_Team = m_apPlayers[ClientID]->GetTeam();
+        ClientInfoMsg.m_pName = Server()->ClientName(ClientID);
+        ClientInfoMsg.m_pClan = Server()->ClientClan(ClientID);
+        ClientInfoMsg.m_Country = Server()->ClientCountry(ClientID);
+        ClientInfoMsg.m_Silent = true;
+
+        //Connection Message
+        CNetMsg_Sv_ClientInfo NewClientInfoMsg;
+        NewClientInfoMsg.m_ClientID = ClientID;
+        NewClientInfoMsg.m_Local = 0;
+        NewClientInfoMsg.m_Team = m_apPlayers[ClientID]->GetTeam();
+        NewClientInfoMsg.m_pName = Server()->ClientName(ClientID);
+        NewClientInfoMsg.m_pClan = Server()->ClientClan(ClientID);
+        NewClientInfoMsg.m_Country = Server()->ClientCountry(ClientID);
+        NewClientInfoMsg.m_Silent = true;
+
+        //Fill in Skindata
+        for(int p = 0; p < 6; p++)
+        {
+            ClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            ClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            ClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+
+
+            NewClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+            NewClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+            NewClientInfoMsg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+        }
+
+        //Disconnect Message
+        CNetMsg_Sv_ClientDrop Msg;
+        Msg.m_ClientID = ClientID;
+        Msg.m_pReason = "colorchange";
+        Msg.m_Silent = true;
+
+        /*RECONNECT*/
+        //Send Disconnect
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+        //Send joining of new player
+        Server()->SendPackMsg(&NewClientInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+        Server()->SendPackMsg(&ClientInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+    }
 }
 
 void CGameContext::SendGameMsg(int GameMsgID, int ClientID)
@@ -819,6 +888,23 @@ void CGameContext::OnClientEnter(int ClientID)
 		Msg.m_Team = NewClientInfoMsg.m_Team;
 		Server()->SendPackMsg(&Msg, MSGFLAG_NOSEND, -1);
 	}
+
+	if(Server()->GetClientVersion(ClientID) < MIN_SKINCHANGE_CLIENTVERSION)
+	{
+        std::vector<std::string> messageList;
+        messageList.push_back("Your Client is too old, you may have troubles in this Mod");
+        messageList.push_back("Reqired 0.7.3 or higher");
+        CNetMsg_Sv_Chat Msg;
+        Msg.m_Mode = CHAT_ALL;
+        Msg.m_ClientID = -1;
+
+        Msg.m_TargetID = ClientID;
+        for(auto it = messageList.begin(); it != messageList.end(); ++it)
+        {
+            Msg.m_pMessage = it->c_str();
+            Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+        }
+    }
 }
 
 void CGameContext::SetStartTeam(int ClientID)
@@ -1215,7 +1301,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
             ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
-            SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
+            SendChat(ClientID, CHAT_ALL, ClientID, "Your skinchange will apply next round");
 			// update all clients//don't update, the update will apply next round
 			/*for(int i = 0; i < MAX_CLIENTS; ++i)
 			{

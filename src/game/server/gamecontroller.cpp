@@ -400,11 +400,11 @@ void IGameController::OnReset()
 			GameServer()->m_apPlayers[i]->m_RespawnDisabled = false;
 			GameServer()->m_apPlayers[i]->Respawn();
 			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-			if(m_RoundCount == 0)
+			/*if(m_RoundCount == 0)
 			{
 				GameServer()->m_apPlayers[i]->m_Score = 0;
 				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
-			}
+			}*/
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
 			GameServer()->ResetSkin(i);
 		}
@@ -644,7 +644,10 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			GameServer()->m_World.m_Paused = true;
 			if(GameServer()->m_apPlayers[m_TopTeam]) {
                 char aBuf[256];
-                str_format(aBuf, sizeof(aBuf), "Team '%s' of player '%s' won the round!", TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam));
+                GameServer()->m_apPlayers[m_TopTeam]->m_Score+=g_Config.m_SvWinBonus;
+                char colorbuf[5];
+                TeamHandler::getInstance().HSLtoRGBString(m_TopTeam, colorbuf);
+                str_format(aBuf, sizeof(aBuf), "%s■■■^999 Team '%s' of player '%s' won the round! %s■■■", colorbuf, TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam), colorbuf);
 
                 GameServer()->SendBroadcast(aBuf, -1);
 			}

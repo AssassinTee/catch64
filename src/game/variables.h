@@ -137,6 +137,8 @@ MACRO_CONFIG_INT(SvAllowPickups, sv_start_weapon, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_
 MACRO_CONFIG_INT(SvAllowWeaponPickups, sv_start_weapon, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Spawn weapons")
 
 MACRO_CONFIG_INT(SvSelfkillCooldown, sv_selfkill_cooldown, 15, 3, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Cooldown for selfkill, 3 seconds is the teeworlds minimum!");
+MACRO_CONFIG_INT(SvWinBonus, sv_selfkill_cooldown, 5, 0, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Bonus for Winning Team leader");
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS-1, CFGFLAG_SERVER, "")

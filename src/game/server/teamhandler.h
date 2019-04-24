@@ -21,6 +21,7 @@ public:
     int GetNewBodyColor(int ClientID);
     int GetNewFeetColor(int ClientID);
     const char* GetTeamName(int ClientID);
+    void HSLtoRGBString(int ClientID, char* buf);
 private:
     std::string GetBasicColorName(int ClientID);
     TeamHandler(){}

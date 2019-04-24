@@ -1,4 +1,5 @@
 #include "teamhandler.h"
+#include <base/color.h>
 
 int TeamHandler::GetNewTeamColor(int ClientID)
 {
@@ -119,3 +120,20 @@ int TeamHandler::HSLtoInt(int H, int S, int L)
     color = (color&0x00FFFFFF) | (255 << 24);
     return color;
 }
+
+//This is a fun method blargh
+void TeamHandler::HSLtoRGBString(int ClientID, char* buf)
+{
+    int HSL = GetNewBodyColor(ClientID);
+    int h = (HSL >> 16)&(0x000000FF);
+    int s = (HSL >> 8)&(0x000000FF);
+    int l = HSL&(0x000000FF);
+    vec3 hsl = vec3(h/255.0f, s/255.0f, l/255.0f);
+    vec3 rgb = HslToRgb(hsl);
+    buf[0] = '^';
+    for(int i = 0; i < 3; ++i)
+        buf[1+i] = '0'+(int)(rgb[i]*10);
+    buf[4] = 0;
+}
+
+
