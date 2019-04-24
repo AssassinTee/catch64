@@ -193,6 +193,10 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 
 void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
 {
+    if(m_apPlayers[ChatterClientID]->m_LastCommand && m_apPlayers[ChatterClientID]->m_LastCommand+Server()->TickSpeed()*0.5 > Server()->Tick())
+        return;
+    m_apPlayers[ChatterClientID]->m_LastCommand = Server()->Tick();
+
 	std::vector<std::string> messageList;
     if(command == "cmdlist")
     {

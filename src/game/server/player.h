@@ -79,6 +79,7 @@ public:
 	int m_LastEmote;
 	int m_LastKill;
 	int m_LastKillRequest;//prevet server spaming
+	int m_LastCommand;
 	int m_LastReadyChange;
 
 	// TODO: clean this up
