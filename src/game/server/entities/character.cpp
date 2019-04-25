@@ -709,6 +709,18 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
     m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 
+    int64 Mask = CmaskOne(From);
+    for(int i = 0; i < MAX_CLIENTS; i++)
+    {
+        if(GameServer()->m_apPlayers[i] && (GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS ||  GameServer()->m_apPlayers[i]->m_DeadSpecMode) &&
+            GameServer()->m_apPlayers[i]->GetSpectatorID() == From)
+            Mask |= CmaskOne(i);
+    }
+
+    //There you have sound TeeSlayer and Dune :O
+    GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
+	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
+
 	return true;
     /*
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
