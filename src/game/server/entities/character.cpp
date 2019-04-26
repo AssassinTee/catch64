@@ -656,8 +656,6 @@ void CCharacter::Die(int Killer, int Weapon)
         m_Alive = false;
         m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	}
-	if(GameServer()->m_apPlayers[Killer]->GetTeamID() == GameServer()->m_apPlayers[m_pPlayer->GetCID()]->GetTeamID() && Killer != m_pPlayer->GetCID())
-        return;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
 	char aBuf[256];
@@ -694,8 +692,14 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weapon)
 {
+    //This is for rocket jumps
 	m_Core.m_Vel += Force;
 
+	//If player is another player but in same team
+    if(GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeamID() == m_pPlayer->GetTeamID() && From != m_pPlayer->GetCID())
+    {
+        return false;
+    }
 	Die(From, Weapon);
     if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
     {
@@ -705,20 +709,23 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
             pChr->m_EmoteType = EMOTE_HAPPY;
             pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
         }
+
+            int64 Mask = CmaskOne(From);
+        for(int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if(GameServer()->m_apPlayers[i] && (GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS ||  GameServer()->m_apPlayers[i]->m_DeadSpecMode) &&
+                GameServer()->m_apPlayers[i]->GetSpectatorID() == From)
+                Mask |= CmaskOne(i);
+        }
+
+        //There you have sound TeeSlayer and Dune :O
+        GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
     }
+
+    //This happens with selfdamage, too
     m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 
-    int64 Mask = CmaskOne(From);
-    for(int i = 0; i < MAX_CLIENTS; i++)
-    {
-        if(GameServer()->m_apPlayers[i] && (GameServer()->m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS ||  GameServer()->m_apPlayers[i]->m_DeadSpecMode) &&
-            GameServer()->m_apPlayers[i]->GetSpectatorID() == From)
-            Mask |= CmaskOne(i);
-    }
-
-    //There you have sound TeeSlayer and Dune :O
-    GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
 	return true;

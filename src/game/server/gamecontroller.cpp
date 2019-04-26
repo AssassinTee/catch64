@@ -51,6 +51,8 @@ IGameController::IGameController(CGameContext *pGameServer)
 	m_aNumSpawnPoints[0] = 0;
 	m_aNumSpawnPoints[1] = 0;
 	m_aNumSpawnPoints[2] = 0;
+
+	m_TopTeam = -1;
 }
 
 //activity
@@ -435,6 +437,7 @@ bool IGameController::DoWincheckMatch()
 		int Topscore = 0;
 		int TopscoreCount = 0;
 		int TopTeam = -1;
+		int TopTeamCount = 0;
 		bool AllInOneTeam=true;
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
@@ -455,6 +458,7 @@ bool IGameController::DoWincheckMatch()
                         TopTeam = GameServer()->m_apPlayers[i]->GetTeamID();
                     else if(TopTeam != GameServer()->m_apPlayers[i]->GetTeamID())
                         AllInOneTeam = false;
+                    TopTeamCount++;
                 }
 			}
 		}
@@ -462,9 +466,10 @@ bool IGameController::DoWincheckMatch()
 		// check score win condition
 		if((m_GameInfo.m_ScoreLimit > 0 && Topscore >= m_GameInfo.m_ScoreLimit) ||
 			(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60) ||
-			(AllInOneTeam))
+			(AllInOneTeam && TopTeamCount > 1))
 		{
-            m_TopTeam = TopTeam;
+            if(m_GameState == IGS_GAME_RUNNING)
+                m_TopTeam = TopTeam;
 			if(TopscoreCount == 1 || AllInOneTeam)
 			{
 				EndMatch();
@@ -642,7 +647,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			m_GameStateTimer = Timer*Server()->TickSpeed();
 			m_SuddenDeath = 0;
 			GameServer()->m_World.m_Paused = true;
-			if(GameServer()->m_apPlayers[m_TopTeam]) {
+			if(m_TopTeam >= 0 && m_TopTeam < MAX_PLAYERS && GameServer()->m_apPlayers[m_TopTeam]) {
                 char aBuf[256];
                 GameServer()->m_apPlayers[m_TopTeam]->m_Score+=g_Config.m_SvWinBonus;
                 char colorbuf[5];

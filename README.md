@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/AssassinTee/catch64.svg?style=shield)](https://circleci.com/gh/AssassinTee/catch64)
 [![Build status](https://ci.appveyor.com/api/projects/status/uai64nkyvc8tgc36/branch/master?svg=true)](hhttps://ci.appveyor.com/project/AssassinTee/catch64)
 [![release version](https://img.shields.io/github/release/AssassinTee/catch64.svg?style=flat)](https://github.com/AssassinTee/catch64/releases)
-![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.3-brightgreen.svg)
+![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.3.1-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
 [![HitCount](http://hits.dwyl.io/AssassinTee/catch64.svg)](http://hits.dwyl.io/AssassinTee/catch64)
 > _"HITS - How Idiots Track Success"_
