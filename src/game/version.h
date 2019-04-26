@@ -6,6 +6,6 @@
 #define GAME_VERSION "0.7.3"
 #define GAME_NETVERSION "0.7 802f1be60a05665f"
 #define CLIENT_VERSION 0x0703
-static const char GAME_RELEASE_VERSION[8] = "0.7.3";
+static const char GAME_RELEASE_VERSION[8] = "0.7.3.1";
 #define CATCH_VERSION "1.0.5"
 #endif

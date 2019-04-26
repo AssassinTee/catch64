@@ -141,7 +141,7 @@ MACRO_CONFIG_INT(SvWinBonus, sv_win_bonus, 5, 0, 9999, CFGFLAG_SAVE|CFGFLAG_SERV
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
-	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS-1, CFGFLAG_SERVER, "")
+	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")
 #endif
 
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
