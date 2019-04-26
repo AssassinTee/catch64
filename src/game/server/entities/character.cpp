@@ -696,9 +696,10 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	m_Core.m_Vel += Force;
 
 	//If player is another player but in same team
-    if(GameServer()->m_apPlayers[Killer]->GetTeamID() == GameServer()->m_apPlayers[m_pPlayer->GetCID()]->GetTeamID() && Killer != m_pPlayer->GetCID())
-        return;
-
+    if(GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeamID() == m_pPlayer->GetTeamID() && From != m_pPlayer->GetCID())
+    {
+        return false;
+    }
 	Die(From, Weapon);
     if (From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
     {
