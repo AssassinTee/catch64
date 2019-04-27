@@ -1278,9 +1278,18 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 pPlayer->m_LastKillRequest = Server()->Tick();
                 char aSelfkill[128];
-                int seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick())/Server()->TickSpeed();
-                str_format(aSelfkill, sizeof(aSelfkill), "You can't selfkill for '%d' second(s)", seconds);
-                SendChat(-1, CHAT_ALL, ClientID, aSelfkill);
+                float seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick())/Server()->TickSpeed();
+                str_format(aSelfkill, sizeof(aSelfkill), "You can't selfkill for %.2f second(s)", seconds);
+
+                CNetMsg_Sv_Chat Msg;
+                Msg.m_Mode = CHAT_ALL;
+                Msg.m_ClientID = -1;
+
+                Msg.m_TargetID = ClientID;
+
+                Msg.m_pMessage = aSelfkill;
+                Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
                 return;
             }
 
