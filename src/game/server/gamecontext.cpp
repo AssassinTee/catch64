@@ -911,9 +911,9 @@ void CGameContext::SetStartTeam(int ClientID)
 {
     //count people per teamid
     std::map<int, int> teamcounts;
-    for(int i = 0; i < MAX_CLIENTS; i++)
+    for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && m_apPlayers[i]->GetTeamID() >= 0 && Server()->ClientIngame(i))
 		{
             teamcounts[m_apPlayers[i]->GetTeamID()]++;
 		}
@@ -940,6 +940,9 @@ void CGameContext::SetStartTeam(int ClientID)
         int randomteam = resultteams[rand()%(resultteams.size())];
         m_apPlayers[ClientID]->SetTeamID(randomteam);
         copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[randomteam]->m_TeeInfosOriginal);
+        char aBuf[256];
+        str_format(aBuf, sizeof(aBuf), "set startteam of player '%s' to '%d'", Server()->ClientName(ClientID), randomteam);
+        Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
     }
 }
 
