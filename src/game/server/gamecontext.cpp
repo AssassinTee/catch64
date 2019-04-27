@@ -405,10 +405,11 @@ void CGameContext::SendSkinChange(int ClientID, int TargetID)
     {
         for(int i = 0; i < MAX_PLAYERS; ++i)
         {
-            if(m_apPlayers[i] && !m_apPlayers[i]->IsDummy())
-                SendSkinChange(ClientID, i);
+            SendSkinChange(ClientID, i);
         }
     }
+    else if(!m_apPlayers[TargetID] || m_apPlayers[TargetID]->IsDummy() || !Server()->ClientIngame(TargetID))
+        return;
     else if(Server()->GetClientVersion(TargetID) >= MIN_SKINCHANGE_CLIENTVERSION)//Send normal message
     {
         CNetMsg_Sv_SkinChange Msg;
@@ -1319,6 +1320,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
             Msg.m_pMessage = "Your skinchange will apply next round";
             Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
+            char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "Player '%s' updated skin", Server()->ClientName(ClientID));
+			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
 
             //SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
 			// update all clients//don't update, the update will apply next round
