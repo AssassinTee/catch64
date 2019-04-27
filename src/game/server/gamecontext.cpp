@@ -405,10 +405,11 @@ void CGameContext::SendSkinChange(int ClientID, int TargetID)
     {
         for(int i = 0; i < MAX_PLAYERS; ++i)
         {
-            if(m_apPlayers[i] && !m_apPlayers[i]->IsDummy())
-                SendSkinChange(ClientID, i);
+            SendSkinChange(ClientID, i);
         }
     }
+    else if(!m_apPlayers[TargetID] || m_apPlayers[TargetID]->IsDummy() || !Server()->ClientIngame(TargetID))
+        return;
     else if(Server()->GetClientVersion(TargetID) >= MIN_SKINCHANGE_CLIENTVERSION)//Send normal message
     {
         CNetMsg_Sv_SkinChange Msg;
@@ -911,9 +912,9 @@ void CGameContext::SetStartTeam(int ClientID)
 {
     //count people per teamid
     std::map<int, int> teamcounts;
-    for(int i = 0; i < MAX_CLIENTS; i++)
+    for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(m_apPlayers[i])
+		if(m_apPlayers[i] && m_apPlayers[i]->GetTeamID() >= 0 && Server()->ClientIngame(i))
 		{
             teamcounts[m_apPlayers[i]->GetTeamID()]++;
 		}
@@ -940,6 +941,9 @@ void CGameContext::SetStartTeam(int ClientID)
         int randomteam = resultteams[rand()%(resultteams.size())];
         m_apPlayers[ClientID]->SetTeamID(randomteam);
         copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[randomteam]->m_TeeInfosOriginal);
+        char aBuf[256];
+        str_format(aBuf, sizeof(aBuf), "set startteam of player '%s' to '%d'", Server()->ClientName(ClientID), randomteam);
+        Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
     }
 }
 
@@ -1307,7 +1311,21 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
             ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
-            SendChat(ClientID, CHAT_ALL, ClientID, "Your skinchange will apply next round");
+
+            CNetMsg_Sv_Chat Msg;
+            Msg.m_Mode = CHAT_ALL;
+            Msg.m_ClientID = -1;
+
+            Msg.m_TargetID = ClientID;
+
+            Msg.m_pMessage = "Your skinchange will apply next round";
+            Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
+            char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "Player '%s' updated skin", Server()->ClientName(ClientID));
+			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
+
+            //SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
 			// update all clients//don't update, the update will apply next round
 			/*for(int i = 0; i < MAX_CLIENTS; ++i)
 			{
