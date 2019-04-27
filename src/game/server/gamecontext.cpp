@@ -1307,7 +1307,17 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
             ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
-            SendChat(ClientID, CHAT_ALL, ClientID, "Your skinchange will apply next round");
+
+            CNetMsg_Sv_Chat Msg;
+            Msg.m_Mode = CHAT_ALL;
+            Msg.m_ClientID = -1;
+
+            Msg.m_TargetID = ClientID;
+
+            Msg.m_pMessage = "Your skinchange will apply next round";
+            Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+
+            //SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
 			// update all clients//don't update, the update will apply next round
 			/*for(int i = 0; i < MAX_CLIENTS; ++i)
 			{
