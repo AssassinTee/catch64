@@ -299,6 +299,16 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 	}
 }
 
+void CGameContext::SendServerInfo(const char* pText, int ClientID)
+{
+    CNetMsg_Sv_Chat Msg;
+    Msg.m_Mode = CHAT_ALL;//Doesn't matter
+    Msg.m_ClientID = -1;//From Server
+    Msg.m_TargetID = ClientID;//To Client
+    Msg.m_pMessage = pText;
+    Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);//To Client
+}
+
 void CGameContext::SendBroadcast(const char* pText, int ClientID)
 {
 	CNetMsg_Sv_Broadcast Msg;
@@ -1278,9 +1288,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
             {
                 pPlayer->m_LastKillRequest = Server()->Tick();
                 char aSelfkill[128];
-                int seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick())/Server()->TickSpeed();
-                str_format(aSelfkill, sizeof(aSelfkill), "You can't selfkill for '%d' second(s)", seconds);
-                SendChat(-1, CHAT_ALL, ClientID, aSelfkill);
+                float seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick()*1.0f)/Server()->TickSpeed();
+                str_format(aSelfkill, sizeof(aSelfkill), "You can't kill yourself for %.2f second(s)", seconds);
+                SendServerInfo(aSelfkill, ClientID);
                 return;
             }
 
@@ -1311,29 +1321,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
             ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
-
-            CNetMsg_Sv_Chat Msg;
-            Msg.m_Mode = CHAT_ALL;
-            Msg.m_ClientID = -1;
-
-            Msg.m_TargetID = ClientID;
-
-            Msg.m_pMessage = "Your skinchange will apply next round";
-            Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-
-            char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "Player '%s' updated skin", Server()->ClientName(ClientID));
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
-
-            //SendChat(-1, CHAT_ALL, ClientID, "Your skinchange will apply next round");
-			// update all clients//don't update, the update will apply next round
-			/*for(int i = 0; i < MAX_CLIENTS; ++i)
-			{
-				if(!m_apPlayers[i] || (!Server()->ClientIngame(i) && !m_apPlayers[i]->IsDummy()) || Server()->GetClientVersion(i) < MIN_SKINCHANGE_CLIENTVERSION)
-					continue;
-
-				SendSkinChange(pPlayer->GetCID(), i);
-			}*/
+            SendServerInfo("Your skinchange will apply next round", ClientID);
 		}
 	}
 	else

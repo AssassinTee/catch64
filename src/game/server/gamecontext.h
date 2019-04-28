@@ -139,6 +139,8 @@ public:
 
     //network command
 	void SendCommand(int ChatterClientID, const std::string& command);
+    void SendServerInfo(const char* pText, int ClientID);
+
 	// network
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
 	void SendBroadcast(const char *pText, int ClientID);

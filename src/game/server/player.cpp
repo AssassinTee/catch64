@@ -457,6 +457,11 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 			}
 		}
 	}
+	else
+	{
+        GameServer()->SetStartTeam(m_ClientID);
+        GameServer()->SendSkinChange(m_ClientID, -1);
+	}
 }
 
 void CPlayer::TryRespawn()

@@ -695,8 +695,12 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
     //This is for rocket jumps
 	m_Core.m_Vel += Force;
 
-	//If player is another player but in same team
-    if(GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeamID() == m_pPlayer->GetTeamID() && From != m_pPlayer->GetCID())
+	/*If player is another player but in same team
+	OR Killer is self and Weapon is normal weapon, prevents grenade selfkills
+	OR Weapon is Grenade and Damage is too small (prevents Explosions beeing to strong)*/
+    if((GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeamID() == m_pPlayer->GetTeamID() && From != m_pPlayer->GetCID())
+        || (From == m_pPlayer->GetCID() && Weapon >= WEAPON_HAMMER)
+        || (Weapon == WEAPON_GRENADE && Dmg < g_Config.m_SvMinGrenadeDmg))
     {
         return false;
     }
