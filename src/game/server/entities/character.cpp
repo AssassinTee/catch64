@@ -59,8 +59,8 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = (int)g_Config.m_SvStartWeapon;
-	m_LastWeapon = (int)g_Config.m_SvStartWeapon;
+	m_ActiveWeapon = (int)GameServer()->m_pController->GetStartWeapon();
+	m_LastWeapon = (int)GameServer()->m_pController->GetStartWeapon();
 	m_QueuedWeapon = -1;
 
 	m_pPlayer = pPlayer;
@@ -101,6 +101,20 @@ void CCharacter::SetWeapon(int W)
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
 		m_ActiveWeapon = 0;
+	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
+}
+
+void CCharacter::SetActiveWeapon(int W)
+{
+	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
+		return;
+	m_LastWeapon = W;
+	m_ActiveWeapon = W;
+	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
+	for(int i = 0; i < NUM_WEAPONS; ++i)
+		m_aWeapons[i].m_Got = false;
+	m_aWeapons[W].m_Got = true;
+	m_aWeapons[W].m_Ammo = -1;
 	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 

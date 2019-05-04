@@ -53,6 +53,7 @@ IGameController::IGameController(CGameContext *pGameServer)
 	m_aNumSpawnPoints[2] = 0;
 
 	m_TopTeam = -1;
+	m_StartWeapon = 4;//Weapon laser;
 }
 
 //activity
@@ -251,7 +252,7 @@ void IGameController::OnCharacterSpawn(CCharacter *pChr)
     // default health
     pChr->IncreaseHealth(10);
 
-	int Weapon = g_Config.m_SvStartWeapon;
+	int Weapon = m_StartWeapon;
 	pChr->GiveWeapon(Weapon, -1);
 }
 

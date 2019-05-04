@@ -120,6 +120,7 @@ protected:
 
 	//colorcatch winner
 	int m_TopTeam;
+	int m_StartWeapon;
 
 public:
 	IGameController(class CGameContext *pGameServer);
@@ -217,6 +218,9 @@ public:
 
 	int GetRealPlayerNum() const { return m_aTeamSize[TEAM_RED]+m_aTeamSize[TEAM_BLUE]; }
 	int GetStartTeam();
+
+	void SetStartWeapon(int W){ m_StartWeapon = W;}
+	int GetStartWeapon(){ return m_StartWeapon;}
 };
 
 #endif
