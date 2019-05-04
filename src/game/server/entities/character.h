@@ -30,6 +30,7 @@ public:
 	bool IsGrounded();
 
 	void SetWeapon(int W);
+	void SetActiveWeapon(int W);
 	void HandleWeaponSwitch();
 	void DoWeaponSwitch();
 

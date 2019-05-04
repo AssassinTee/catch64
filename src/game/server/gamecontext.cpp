@@ -1733,6 +1733,25 @@ void CGameContext::ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUse
 	}
 }
 
+void CGameContext::ConStartWeapon(IConsole::IResult *pResult, void* pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int StartWeapon = pResult->GetInteger(0);
+	if(StartWeapon < 0 || StartWeapon > 4)
+		StartWeapon = 0;
+	pSelf->SetStartWeapon(StartWeapon);
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetCharacter())
+			pSelf->m_apPlayers[i]->GetCharacter()->SetActiveWeapon(StartWeapon);
+}
+
+void CGameContext::SetStartWeapon(int StartWeapon)
+{
+	if(m_pController)
+		m_pController->SetStartWeapon(StartWeapon);
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -1758,6 +1777,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
+
+	Console()->Register("start_weapon", "i", CFGFLAG_SERVER, ConStartWeapon, this, "Set start weapon");
 }
 
 void CGameContext::OnInit()
