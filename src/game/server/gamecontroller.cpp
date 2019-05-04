@@ -403,11 +403,11 @@ void IGameController::OnReset()
 			GameServer()->m_apPlayers[i]->m_RespawnDisabled = false;
 			GameServer()->m_apPlayers[i]->Respawn();
 			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-			/*if(m_RoundCount == 0)
+			if(m_TopscoreCount == 1)
 			{
 				GameServer()->m_apPlayers[i]->m_Score = 0;
 				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
-			}*/
+			}
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
 			GameServer()->ResetSkin(i);
 		}
@@ -436,7 +436,7 @@ bool IGameController::DoWincheckMatch()
 	{
 		// gather some stats
 		int Topscore = 0;
-		int TopscoreCount = 0;
+		m_TopscoreCount = 0;
 		int TopTeam = -1;
 		int TopTeamCount = 0;
 		bool AllInOneTeam=true;
@@ -447,10 +447,10 @@ bool IGameController::DoWincheckMatch()
 				if(GameServer()->m_apPlayers[i]->m_Score > Topscore)
 				{
 					Topscore = GameServer()->m_apPlayers[i]->m_Score;
-					TopscoreCount = 1;
+					m_TopscoreCount = 1;
 				}
 				else if(GameServer()->m_apPlayers[i]->m_Score == Topscore)
-					TopscoreCount++;
+					m_TopscoreCount++;
 
                 //calc if all players are in one Team
                 if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && AllInOneTeam)
@@ -471,7 +471,7 @@ bool IGameController::DoWincheckMatch()
 		{
             if(m_GameState == IGS_GAME_RUNNING)
                 m_TopTeam = TopTeam;
-			if(TopscoreCount == 1 || AllInOneTeam)
+			if(m_TopscoreCount == 1 || AllInOneTeam)
 			{
 				EndMatch();
 				return true;

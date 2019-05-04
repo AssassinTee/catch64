@@ -122,6 +122,8 @@ protected:
 	int m_TopTeam;
 	int m_StartWeapon;
 
+	int m_TopscoreCount;
+
 public:
 	IGameController(class CGameContext *pGameServer);
 	virtual ~IGameController() {};
