@@ -43,7 +43,7 @@ artifacts:
     
 deploy:
   - provider: GitHub
-    tag: windows32-v$(appveyor_build_version)
+    tag: windows32
     artifact: Release32
     auth_token:
       secure: XM6P3saTtiKqc+QAmqTVpb38FYa0nsFwcnqVWMrERdYWjeF91dK4+42PVwiDnkFb
@@ -54,7 +54,7 @@ deploy:
       APPVEYOR_REPO_TAG: false
   
   - provider: GitHub
-    tag: windows64-v$(appveyor_build_version)
+    tag: windows64
     artifact: Release64
     auth_token:
       secure: XM6P3saTtiKqc+QAmqTVpb38FYa0nsFwcnqVWMrERdYWjeF91dK4+42PVwiDnkFb
