@@ -48,6 +48,7 @@ sudo brew install cmake freetype sdl2
 
 ## Variables
 
+new variables of catch64:
 
 | command |default | min |max |  description |
 | --- | ---| --- | --- |
