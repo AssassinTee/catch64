@@ -48,16 +48,13 @@ sudo brew install cmake freetype sdl2
 
 ## Variables
 
-new variables of catch64:
-
-| command |default | min |max |  description |
-| --- | --- | --- | --- |
-
-| sv_allow_pickups | 0 | 0 | 1 | Spawn hearts and shields |
-| sv_allow_weapon_pickups | 0 | 0 | 1 | Spawn weapons |
-| sv_selfkill_cooldown | 15 | 3 | 9999 | Cooldown after selfkill |
-| sv_win_bonus | 5 | 0 | 9999 | Bonus for winning a round |
-| sv_min_grenade_damage | 4 | 0 | 6 | Minimum damage required for a kill |
+| command                 | default | min | max  | description                        |
+| ----------------------- | ------- | --- | ---- | ---------------------------------- |
+| sv_allow_pickups        | 0       | 0   | 1    | Spawn hearts and shields           |
+| sv_allow_weapon_pickups | 0       | 0   | 1    | Spawn weapons                      |
+| sv_selfkill_cooldown    | 15      | 3   | 9999 | Cooldown after selfkill            |
+| sv_win_bonus            | 5       | 0   | 9999 | Bonus for winning a round          |
+| sv_min_grenade_damage   | 4       | 0   | 6    | Minimum damage required for a kill |
 
 ## Contributing
 
