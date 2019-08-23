@@ -4,8 +4,6 @@
 [![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows-brightgreen)](https://github.com/AssassinTee/catch64/releases)
 ![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.3.1-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
-[![HitCount](http://hits.dwyl.io/AssassinTee/catch64.svg)](http://hits.dwyl.io/AssassinTee/catch64)
-> _"HITS - How Idiots Track Success"_
 
 ## Description
 catch64 is a -Mod for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
@@ -48,8 +46,15 @@ sudo brew install cmake freetype sdl2
 
 * Have Fun!
 
-.
-You may want to take a look at the variables of this gamemode.
+## Variables
+
+```python
+sv_allow_pickups #Spawn hearts/shields
+sv_allow_weapon_pickups #Spawn weapons
+sv_selfkill_cooldown #Cooldown after selfkill
+sv_win_bonus #Bonus for winning a round
+sv_min_grenade_damage #Minimum damage required for a kill
+```
 
 ## Contributing
 
