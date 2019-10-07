@@ -74,6 +74,8 @@ jobs:
       - name: Prepare
         run: |
           brew install sdl2
+          sudo chown root:wheel /usr/local/bin/brew
+          sudo brew link sdl2
           brew install freetype
           git submodule update --init
           mkdir build; cd build
