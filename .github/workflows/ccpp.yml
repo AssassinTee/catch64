@@ -56,8 +56,10 @@ jobs:
           cd ..
       - name: Build
         run: |
-          cmake --build build32 --config Release --target everything
-          cmake --build build64 --config Release --target everything
+          cmake --build build32 --config Release --target server
+          cmake --build build32 --config Release --target client
+          cmake --build build64 --config Release --target server
+          cmake --build build64 --config Release --target client
       - name: Test
         run: |
           cd build32
