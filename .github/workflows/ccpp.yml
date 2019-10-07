@@ -73,11 +73,7 @@ jobs:
       - uses: actions/checkout@master
       - name: Prepare
         run: |
-          xcode-select --install
-          brew install SDL2
-          brew install SDL2_image
-          brew install SDL2_ttf
-          brew install freetype
+          brew install cmake freetype sdl2
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
