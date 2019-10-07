@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p release
           cd release
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DOpenGL_GL_PREFERENCE=GLVND ..
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DOpenGL_GL_PREFERENCE=LEGACY ..
           make everything
           make run_tests
           ./teeworlds_srv shutdown
@@ -37,7 +37,7 @@ jobs:
         run: |
           mkdir -p debug
           cd debug
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DOpenGL_GL_PREFERENCE=GLVND ..
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DOpenGL_GL_PREFERENCE=LEGACY ..
           make everything
           make run_tests
           ./teeworlds_srv shutdown
