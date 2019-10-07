@@ -4,6 +4,7 @@
 [![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows-brightgreen)](https://github.com/AssassinTee/catch64/releases)
 ![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.3.1-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
+[![Actions Status](https://github.com/AssassinTee/catch64/workflows/ccpp/badge.svg)](https://github.com/AssassinTee/catch64/actions)
 
 ## Description
 catch64 is a -Mod for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
