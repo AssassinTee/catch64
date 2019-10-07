@@ -74,6 +74,7 @@ jobs:
       - name: Prepare
         run: |
           brew install sdl2
+          brew install freetype
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
           cd ..
