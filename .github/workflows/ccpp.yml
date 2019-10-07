@@ -10,6 +10,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
+      - uses: AssassinTee/catch64@master
       - name: Prepare
         run: |
           sudo apt-get update -y
