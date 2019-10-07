@@ -57,12 +57,12 @@ jobs:
       - name: Build
         run: |
           cmake --build build32 --config Release --target everything
-          cmake --build build36 --config Release --target everything
+          cmake --build build64 --config Release --target everything
       - name: Test
         run: |
           cd build32
           Release\teeworlds_srv shutdown
           cd ..
-          cd build36
+          cd build64
           Release\teeworlds_srv shutdown
           cd ..
