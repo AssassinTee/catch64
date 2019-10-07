@@ -75,13 +75,14 @@ jobs:
         run: |
           CFLAGS="-Wdeclaration-after-statement -Werror"
           CXXFLAGS="-Werror"
+          chmod 755 /usr/local/lib/pkgconfig
           brew install cmake freetype sdl2
           git submodule update --init
           mkdir build; cd build
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_PREFIX_PATH=/usr/local/Cellar/sdl2/2.0.10 ..
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
           cd ..
           mkdir build_debug; cd build_debug
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_PREFIX_PATH=/usr/local/Cellar/sdl2/2.0.10 -DDEV=ON ..
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
           cd ..
       - name: Build Release
         run: |
