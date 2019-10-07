@@ -49,10 +49,10 @@ jobs:
         run: |
           git submodule update --init
           md build32 & cd build32
-          cmake -Werror=dev -G "Visual Studio 14 2015" ..
+          cmake -Werror=dev -G "Visual Studio 16 2019" ..
           cd ..
           md build64 & cd build64
-          cmake -Werror=dev -G "Visual Studio 14 2015 Win64" ..
+          cmake -Werror=dev -G "Visual Studio 16 2019 Win64" ..
           cd ..
       - name: Build
         run: |
