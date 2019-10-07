@@ -56,10 +56,10 @@ jobs:
           cd ..
       - name: Build
         run: |
-          cmake --build build32 --config Release --target server
-          cmake --build build32 --config Release --target client
-          cmake --build build64 --config Release --target server
-          cmake --build build64 --config Release --target client
+          cmake --build build32 --config Release --target teeworlds_srv
+          cmake --build build32 --config Release --target teeworlds
+          cmake --build build64 --config Release --target teeworlds_srv
+          cmake --build build64 --config Release --target teeworlds
       - name: Test
         run: |
           cd build32
