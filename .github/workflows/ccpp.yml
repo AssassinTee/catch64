@@ -52,14 +52,12 @@ jobs:
           cmake -Werror=dev -G "Visual Studio 16 2019" ..
           cd ..
           md build64 & cd build64
-          cmake -Werror=dev -G "Visual Studio 16 2019 Win64" ..
+          cmake -Werror=dev -G "Visual Studio 16 2019" -A x64 ..
           cd ..
       - name: Build
         run: |
-          cmake --build build32 --config Release --target teeworlds_srv
-          cmake --build build32 --config Release --target teeworlds
-          cmake --build build64 --config Release --target teeworlds_srv
-          cmake --build build64 --config Release --target teeworlds
+          cmake --build build32 --config Release --target everything
+          cmake --build build64 --config Release --target everything
       - name: Test
         run: |
           cd build32
