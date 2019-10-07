@@ -8,12 +8,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest]
     steps:
       - name: Prepare
         run: |
-          apt-get update -y
-          apt-get install cmake libfreetype6-dev libsdl2-dev -y
+          sudo apt-get update -y
+          sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
           git submodule update --init
       - name: Build Bam
         run: |
