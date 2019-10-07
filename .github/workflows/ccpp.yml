@@ -1,15 +1,12 @@
-name: Ubuntu-latest
+name: All OS
 on:
   push:
     branches: 
       - master
 jobs:
-  build:
-    name: Build source
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+  build_ubuntu:
+    name: Build Ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
       - name: Prepare
@@ -42,4 +39,30 @@ jobs:
           make everything
           make run_tests
           ./teeworlds_srv shutdown
-            
+          
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Prepare
+        run: |
+          git submodule update --init
+          md build32 & cd build32
+          cmake -Werror=dev -G "Visual Studio 14 2015" ..
+          cd ..
+          md build64 & cd build64
+          cmake -Werror=dev -G "Visual Studio 14 2015 Win64" ..
+          cd ..
+      - name: Build
+        run: |
+          cmake --build build32 --config Release --target everything
+          cmake --build build36 --config Release --target everything
+      - name: Test
+        run: |
+          cd build32
+          Release\teeworlds_srv shutdown
+          cd ..
+          cd build36
+          Release\teeworlds_srv shutdown
+          cd ..
