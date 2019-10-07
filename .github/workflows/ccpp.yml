@@ -66,3 +66,40 @@ jobs:
           cd build64
           Release\teeworlds_srv shutdown
           cd ..
+  build_mac:
+    name: Build MacOS
+    runs-on: macOS-latest
+    steps:
+      - name: Prepare
+        run: |
+          brew install sdl2
+          mkdir build; cd build
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
+          cd ..
+          mkdir build_debug; cd build_debug
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
+          cd ..
+      - name: Build Release
+        run: |
+          cd build
+          make everything
+          cd ..
+      - name: Build Debug
+        run: |
+          cd build_debug
+          make everything
+          cd ..
+      - name: Test Release
+          cd build
+          make run_tests
+          make package_default
+          cd ..
+          build/teeworlds_srv shutdown
+      - name: Test Debug
+          cd build_debug
+          make run_tests
+          make package_default
+          cd ..
+          build_debug/teeworlds_srv shutdown
+          
+
