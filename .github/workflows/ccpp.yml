@@ -78,10 +78,10 @@ jobs:
           brew install cmake freetype sdl2
           git submodule update --init
           mkdir build; cd build
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_PREFIX_PATH=/usr/local/Cellar/sdl2 ..
           cd ..
           mkdir build_debug; cd build_debug
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_PREFIX_PATH=/usr/local/Cellar/sdl2 -DDEV=ON ..
           cd ..
       - name: Build Release
         run: |
