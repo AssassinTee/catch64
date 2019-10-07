@@ -1,0 +1,43 @@
+on:
+  push:
+    branches: 
+      - master
+jobs:
+  build:
+    name: Build source
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - name: Prepare
+        run: |
+          apt-get update -y
+          apt-get install cmake libfreetype6-dev libsdl2-dev -y
+          git submodule update --init
+      - name: Build Bam
+        run: |
+          git clone https://github.com/matricks/bam.git ~/bam
+          cd ~/bam/
+          git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
+          ./make_unix.sh
+      - name: Build Teeworlds with Bam
+        run: |
+          ~/bam/bam conf=release all
+      - name: Build teeworlds with cmake in Release mode
+        run: |
+          mkdir -p release
+          cd release
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
+          make everything
+          make run_tests
+          ./teeworlds_srv shutdown
+      - name: Build teeworlds with cmake in Debug mode
+        run: |
+          mkdir -p debug
+          cd debug
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
+          make everything
+          make run_tests
+          ./teeworlds_srv shutdown
+            
