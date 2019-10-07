@@ -90,16 +90,17 @@ jobs:
           make everything
           cd ..
       - name: Test Release
+        run: |
           cd build
           make run_tests
           make package_default
           cd ..
           build/teeworlds_srv shutdown
       - name: Test Debug
+        run: |
           cd build_debug
           make run_tests
           make package_default
           cd ..
           build_debug/teeworlds_srv shutdown
           
-
