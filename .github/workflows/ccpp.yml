@@ -30,7 +30,7 @@ jobs:
           mkdir -p release
           cd release
           env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
-          make everything
+          make everything -DOpenGL_GL_PREFERENCE=GLVND
           make run_tests
           ./teeworlds_srv shutdown
       - name: Build teeworlds with cmake in Debug mode
@@ -38,7 +38,7 @@ jobs:
           mkdir -p debug
           cd debug
           env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
-          make everything
+          make everything -DOpenGL_GL_PREFERENCE=GLVND
           make run_tests
           ./teeworlds_srv shutdown
             
