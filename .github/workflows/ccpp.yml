@@ -41,19 +41,13 @@ jobs:
           make run_tests
           ./teeworlds_srv shutdown
           cd ..
-      - name: Build Artifacts
-        run: |
-          zip teeworlds.zip release/teeworlds_srv release/teeworlds
-      - name: Deploy Artifacts
-        uses: actions/upload-artifact@v1
-        with:
-          name: build_artifacts
-          path: teeworlds.zip
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: teeworlds.zip
+          name: Ubuntu-latest
+          files: |
+            release/teeworlds_srv
+            release/teeworlds
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -83,6 +77,15 @@ jobs:
           cd build64
           Release\teeworlds_srv shutdown
           cd ..
+      - name: Deploy Github Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Windows-latest
+          files: |
+            Release\teeworlds_srv
+            Release\teeworlds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   build_mac:
     name: Build MacOS
     runs-on: macOS-latest
@@ -101,3 +104,12 @@ jobs:
       - name: Build Release
         run: |
           ~/bam/bam conf=release all
+      - name: Deploy Github Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: MacOS-latest
+          files: |
+            teeworlds_srv
+            teeworlds
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
