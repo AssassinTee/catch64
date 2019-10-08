@@ -141,10 +141,6 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 
 	-- Build server launcher before adding game stuff
 	local serverlaunch = Link(settings, "serverlaunch", Compile(settings, "src/osxlaunch/server.m"))
-
-	-- c++ 11
-	settings.cc.flags:Add("--std=c++11")
-	settings.link.flags:Add("--std=c++11")
 	
 	-- Master server, version server and tools
 	BuildEngineCommon(settings)
@@ -154,6 +150,10 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 
 	-- Add requirements for Server & Client
 	BuildGameCommon(settings)
+	
+	-- c++ 11
+	settings.cc.flags:Add("--std=c++11")
+	settings.link.flags:Add("--std=c++11")
 
 	-- Server
 	settings.link.frameworks:Add("Cocoa")
