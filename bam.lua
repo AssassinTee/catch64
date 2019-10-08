@@ -103,19 +103,27 @@ function GenerateCommonSettings(settings, conf, arch, compiler)
 	libs = {zlib=zlib, wavpack=wavpack, png=png, md5=md5, json=json}
 end
 
-function GenerateMacOSXSettings(settings, conf, arch, compiler)
+function GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
 	if arch == "x86" then
 		settings.cc.flags:Add("-arch i386")
 		settings.link.flags:Add("-arch i386")
+		settings2.cc.flags:Add("-arch i386")
+		settings2.link.flags:Add("-arch i386")
 	elseif arch == "x86_64" then
 		settings.cc.flags:Add("-arch x86_64")
 		settings.link.flags:Add("-arch x86_64")
+		settings2.cc.flags:Add("-arch x86_64")
+		settings2.link.flags:Add("-arch x86_64")
 	elseif arch == "ppc" then
 		settings.cc.flags:Add("-arch ppc")
 		settings.link.flags:Add("-arch ppc")
+		settings2.cc.flags:Add("-arch ppc")
+		settings2.link.flags:Add("-arch ppc")
 	elseif arch == "ppc64" then
 		settings.cc.flags:Add("-arch ppc64")
 		settings.link.flags:Add("-arch ppc64")
+		settings2.cc.flags:Add("-arch ppc64")
+		settings2.link.flags:Add("-arch ppc64")
 	else
 		print("Unknown Architecture '" .. arch .. "'. Supported: x86, x86_64, ppc, ppc64")
 		os.exit(1)
@@ -124,23 +132,34 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	-- c++ stdlib needed
 	settings.cc.flags:Add("--stdlib=libc++")
 	settings.link.flags:Add("--stdlib=libc++")
+	settings2.cc.flags:Add("--stdlib=libc++")
+	settings2.link.flags:Add("--stdlib=libc++")
+	settings2.cc.flags:Add("-std=c++11")
+	settings2.link.flags:Add("-std=c++11")
 	-- this also needs the macOS min SDK version to be at least 10.7
 
 	settings.cc.flags:Add("-mmacosx-version-min=10.7")
 	settings.link.flags:Add("-mmacosx-version-min=10.7")
+	settings2.cc.flags:Add("-mmacosx-version-min=10.7")
+	settings2.link.flags:Add("-mmacosx-version-min=10.7")
 
 	if config.minmacosxsdk.value == 1 then
 		settings.cc.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
 		settings.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
+		settings2.cc.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
+		settings2.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
 	end
 
 	settings.link.frameworks:Add("Carbon")
 	settings.link.frameworks:Add("AppKit")
+	settings2.link.frameworks:Add("Carbon")
+	settings2.link.frameworks:Add("AppKit")
 
 	GenerateCommonSettings(settings, conf, arch, compiler)
-
+	GenerateCommonSettings(settings2, conf, arch, compiler)
+	
 	-- Build server launcher before adding game stuff
-	local serverlaunch = Link(settings, "serverlaunch", Compile(settings, "src/osxlaunch/server.m"))
+	local serverlaunch = Link(settings2, "serverlaunch", Compile(settings, "src/osxlaunch/server.m"))
 	
 	-- Master server, version server and tools
 	BuildEngineCommon(settings)
@@ -153,7 +172,9 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	
 	-- Server
 	settings.link.frameworks:Add("Cocoa")
-
+	settings2.link.frameworks:Add("Cocoa")
+	local server_exe = BuildServer(settings2)
+	AddDependency(server_exe, serverlaunch)
 	-- Client
 	settings.link.frameworks:Add("OpenGL")
 	settings.link.frameworks:Add("AGL")
@@ -164,10 +185,6 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 
 	-- Content
 	BuildContent(settings, arch, conf)
-	
-	-- Build the Server last
-	local server_exe = BuildServer(settings)
-	AddDependency(server_exe, serverlaunch)
 end
 
 function GenerateLinuxSettings(settings, conf, arch, compiler)
@@ -396,14 +413,17 @@ end
 -- create all targets for specified configuration & architecture
 function GenerateSettings(conf, arch, builddir, compiler)
 	local settings = NewSettings()
-
+	local settings2 = NewSettings()
 	-- Set compiler if explicitly requested
 	if compiler == "gcc" then
 		SetDriversGCC(settings)
+		SetDriversGCC(settings2)
 	elseif compiler == "clang" then
 		SetDriversClang(settings)
+		SetDriversClang(settings2)
 	elseif compiler == "cl" then
 		SetDriversCL(settings)
+		SetDriversCL(settings2)
 	else
 		-- apply compiler settings
 		config.compiler:Apply(settings)
@@ -442,7 +462,7 @@ function GenerateSettings(conf, arch, builddir, compiler)
 		GenerateWindowsSettings(settings, conf, arch, compiler)
 	elseif family == "unix" then
 		if platform == "macosx" then
-			GenerateMacOSXSettings(settings, conf, arch, compiler)
+			GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
 		elseif platform == "solaris" then
 			GenerateSolarisSettings(settings, conf, arch, compiler)
 		else -- Linux, BSD
