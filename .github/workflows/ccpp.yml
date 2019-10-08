@@ -75,7 +75,7 @@ jobs:
         run: |
           brew install freetype sdl2
           git submodule update --init
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON .
       - name: Build Release
         run: |
           make everything
