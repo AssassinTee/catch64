@@ -54,7 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: JasonEtco/upload-to-release@master
         with:
-          args: teeworlds.zip
+          args: teeworlds.zip application/zip
 
   build_windows:
     name: Build Windows
