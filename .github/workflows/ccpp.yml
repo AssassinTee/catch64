@@ -91,4 +91,5 @@ jobs:
           git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
           ./make_unix.sh
       - name: Build Release
+        run: |
           ~/bam/bam conf=release all
