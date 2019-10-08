@@ -124,6 +124,9 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	-- c++ stdlib needed
 	settings.cc.flags:Add("--stdlib=libc++")
 	settings.link.flags:Add("--stdlib=libc++")
+	-- c++ 11 needed for catch64
+	settings.cc.flags:Add("--std=c++11")
+	settings.link.flags:Add("--std=c++11")
 	-- this also needs the macOS min SDK version to be at least 10.7
 
 	settings.cc.flags:Add("-mmacosx-version-min=10.7")
