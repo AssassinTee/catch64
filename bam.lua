@@ -79,7 +79,7 @@ end
 
 function GenerateCommonSettings(settings, conf, arch, compiler)
 	if compiler == "gcc" or compiler == "clang" then
-		settings.cc.flags:Add("-Wall", "-fno-exceptions")
+		settings.cc.flags:Add("-Wall", "-fno-exceptions", "-std=c++11")
 	end
 
 	-- Compile zlib if needed
@@ -348,10 +348,6 @@ function BuildClient(settings, family, platform)
 end
 
 function BuildServer(settings, family, platform)
-	-- c++ 11
-	settings.cc.flags:Add("-std=c++11")
-	settings.link.flags:Add("-std=c++11")
-	
 	local server = Compile(settings, Collect("src/engine/server/*.cpp"))
 	
 	local game_server = Compile(settings, CollectRecursive("src/game/server/*.cpp"), SharedServerFiles())
