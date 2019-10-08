@@ -1,5 +1,5 @@
 # catch64
-[![Actions Status](https://github.com/AssassinTee/catch64/workflows/All%OS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
+[![Actions Status](https://github.com/AssassinTee/catch64/workflows/All OS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
 [![CircleCI](https://circleci.com/gh/AssassinTee/catch64.svg?style=shield)](https://circleci.com/gh/AssassinTee/catch64)
 [![Build status](https://ci.appveyor.com/api/projects/status/uai64nkyvc8tgc36/branch/master?svg=true)](hhttps://ci.appveyor.com/project/AssassinTee/catch64)
 [![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows-brightgreen)](https://github.com/AssassinTee/catch64/releases)
