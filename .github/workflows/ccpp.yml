@@ -88,6 +88,7 @@ jobs:
         run: |
           ./teeworlds_srv shutdown
       - name: Clean Release build
+        run: |
           rm teeworlds_srv
           rm teeworlds
       - name: Build Debug wiht Bam
