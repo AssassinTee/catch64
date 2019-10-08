@@ -43,7 +43,7 @@ jobs:
           cd ..
       - name: Build Artifacts
         run: |
-          zip teeworlds.zip build/teeworlds_srv build/teeworlds
+          zip teeworlds.zip release/teeworlds_srv release/teeworlds
       - name: Deploy Artifacts
         uses: actions/upload-artifact@v1
         with:
