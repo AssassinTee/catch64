@@ -50,6 +50,8 @@ jobs:
           name: build_artifacts
           path: teeworlds.zip
       - name:  Github Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: frankjuniorr/github-create-release-action@v2.1.1
 
   build_windows:
