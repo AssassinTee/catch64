@@ -151,11 +151,6 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	-- Add requirements for Server & Client
 	BuildGameCommon(settings)
 
-	-- Server
-	settings.link.frameworks:Add("Cocoa")
-	local server_exe = BuildServer(settings)
-	AddDependency(server_exe, serverlaunch)
-
 	-- Client
 	settings.link.frameworks:Add("OpenGL")
 	settings.link.frameworks:Add("AGL")
@@ -166,6 +161,12 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 
 	-- Content
 	BuildContent(settings, arch, conf)
+	
+	-- Build the Server last
+	-- Server
+	settings.link.frameworks:Add("Cocoa")
+	local server_exe = BuildServer(settings)
+	AddDependency(server_exe, serverlaunch)
 end
 
 function GenerateLinuxSettings(settings, conf, arch, compiler)
