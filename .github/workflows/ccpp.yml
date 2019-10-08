@@ -74,10 +74,9 @@ jobs:
       - name: Prepare
         run: |
           brew install freetype sdl2
-          ls -l /usr/local/bin
           git submodule update --init
           mkdir build; cd build
-          sudo cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
+          sudo cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_PREFIX_PATH=/usr/local/Cellar/sdl2/2.0.10 ..
           cd ..
           mkdir build_debug; cd build_debug
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
