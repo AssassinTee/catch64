@@ -74,7 +74,7 @@ jobs:
       - name: Prepare
         run: |
           brew install freetype sdl2
-          export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/lib"
+          echo $CMAKE_PREFIX_PATH
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
