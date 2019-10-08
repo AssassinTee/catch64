@@ -79,7 +79,8 @@ end
 
 function GenerateCommonSettings(settings, conf, arch, compiler)
 	if compiler == "gcc" or compiler == "clang" then
-		settings.cc.flags:Add("-Wall", "-fno-exceptions", "-std=c++11")
+		settings.cc.flags:Add("-Wall", "-fno-exceptions")
+		settings.cc.flags_cxx:Add("-std=c++11")
 	end
 
 	-- Compile zlib if needed
@@ -103,27 +104,19 @@ function GenerateCommonSettings(settings, conf, arch, compiler)
 	libs = {zlib=zlib, wavpack=wavpack, png=png, md5=md5, json=json}
 end
 
-function GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
+function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	if arch == "x86" then
 		settings.cc.flags:Add("-arch i386")
 		settings.link.flags:Add("-arch i386")
-		settings2.cc.flags:Add("-arch i386")
-		settings2.link.flags:Add("-arch i386")
 	elseif arch == "x86_64" then
 		settings.cc.flags:Add("-arch x86_64")
 		settings.link.flags:Add("-arch x86_64")
-		settings2.cc.flags:Add("-arch x86_64")
-		settings2.link.flags:Add("-arch x86_64")
 	elseif arch == "ppc" then
 		settings.cc.flags:Add("-arch ppc")
 		settings.link.flags:Add("-arch ppc")
-		settings2.cc.flags:Add("-arch ppc")
-		settings2.link.flags:Add("-arch ppc")
 	elseif arch == "ppc64" then
 		settings.cc.flags:Add("-arch ppc64")
 		settings.link.flags:Add("-arch ppc64")
-		settings2.cc.flags:Add("-arch ppc64")
-		settings2.link.flags:Add("-arch ppc64")
 	else
 		print("Unknown Architecture '" .. arch .. "'. Supported: x86, x86_64, ppc, ppc64")
 		os.exit(1)
@@ -132,35 +125,24 @@ function GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
 	-- c++ stdlib needed
 	settings.cc.flags:Add("--stdlib=libc++")
 	settings.link.flags:Add("--stdlib=libc++")
-	settings2.cc.flags:Add("--stdlib=libc++")
-	settings2.link.flags:Add("--stdlib=libc++")
-	settings2.cc.flags:Add("-std=c++11")
-	settings2.link.flags:Add("-std=c++11")
 	-- this also needs the macOS min SDK version to be at least 10.7
 
 	settings.cc.flags:Add("-mmacosx-version-min=10.7")
 	settings.link.flags:Add("-mmacosx-version-min=10.7")
-	settings2.cc.flags:Add("-mmacosx-version-min=10.7")
-	settings2.link.flags:Add("-mmacosx-version-min=10.7")
 
 	if config.minmacosxsdk.value == 1 then
 		settings.cc.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
 		settings.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
-		settings2.cc.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
-		settings2.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.7.sdk")
 	end
 
 	settings.link.frameworks:Add("Carbon")
 	settings.link.frameworks:Add("AppKit")
-	settings2.link.frameworks:Add("Carbon")
-	settings2.link.frameworks:Add("AppKit")
 
 	GenerateCommonSettings(settings, conf, arch, compiler)
-	GenerateCommonSettings(settings2, conf, arch, compiler)
-	
+
 	-- Build server launcher before adding game stuff
-	local serverlaunch = Link(settings2, "serverlaunch", Compile(settings, "src/osxlaunch/server.m"))
-	
+	local serverlaunch = Link(settings, "serverlaunch", Compile(settings, "src/osxlaunch/server.m"))
+
 	-- Master server, version server and tools
 	BuildEngineCommon(settings)
 	BuildMasterserver(settings)
@@ -169,12 +151,12 @@ function GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
 
 	-- Add requirements for Server & Client
 	BuildGameCommon(settings)
-	
+
 	-- Server
 	settings.link.frameworks:Add("Cocoa")
-	settings2.link.frameworks:Add("Cocoa")
-	local server_exe = BuildServer(settings2)
+	local server_exe = BuildServer(settings)
 	AddDependency(server_exe, serverlaunch)
+
 	-- Client
 	settings.link.frameworks:Add("OpenGL")
 	settings.link.frameworks:Add("AGL")
@@ -256,6 +238,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 	end
 
 	local icons = SharedIcons(compiler)
+	local manifests = SharedManifests(compiler)
 
 	-- Required libs
 	settings.link.libs:Add("gdi32")
@@ -283,6 +266,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 
 	-- Client
 	settings.link.extrafiles:Add(icons.client)
+	settings.link.extrafiles:Add(manifests.client)
 	settings.link.libs:Add("opengl32")
 	settings.link.libs:Add("glu32")
 	settings.link.libs:Add("winmm")
@@ -343,6 +327,14 @@ function SharedIcons(compiler)
 	return shared_icons[compiler]
 end
 
+function SharedManifests(compiler)
+	if not shared_manifests then
+		local client_manifest = ResCompile("other/manifest/teeworlds.rc", compiler)
+		shared_manifests = {client=client_manifest}
+	end
+	return shared_manifests
+end
+
 function BuildEngineCommon(settings)
 	settings.link.extrafiles:Merge(Compile(settings, Collect("src/engine/shared/*.cpp", "src/base/*.c")))
 end
@@ -400,8 +392,8 @@ function BuildContent(settings, arch, conf)
 		end
 		-- dependencies
 		dl = Python("scripts/download.py")
-		AddJob("other/sdl/include/SDL.h", "Downloading SDL2", dl .. " sdl")
-		AddJob("other/freetype/include/ft2build.h", "Downloading freetype", dl .. " freetype")
+		AddJob({"other/sdl/include/SDL.h", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"}, "Downloading SDL2", dl .. " sdl")
+		AddJob({"other/freetype/include/ft2build.h", "other/freetype/windows/lib" .. _arch .. "/freetype.dll"}, "Downloading freetype", dl .. " freetype")
 		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"))
 		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/freetype.dll", "other/freetype/windows/lib" .. _arch .. "/freetype.dll"))
 		AddDependency(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/include/SDL.h")
@@ -413,17 +405,14 @@ end
 -- create all targets for specified configuration & architecture
 function GenerateSettings(conf, arch, builddir, compiler)
 	local settings = NewSettings()
-	local settings2 = NewSettings()
+
 	-- Set compiler if explicitly requested
 	if compiler == "gcc" then
 		SetDriversGCC(settings)
-		SetDriversGCC(settings2)
 	elseif compiler == "clang" then
 		SetDriversClang(settings)
-		SetDriversClang(settings2)
 	elseif compiler == "cl" then
 		SetDriversCL(settings)
-		SetDriversCL(settings2)
 	else
 		-- apply compiler settings
 		config.compiler:Apply(settings)
@@ -462,7 +451,7 @@ function GenerateSettings(conf, arch, builddir, compiler)
 		GenerateWindowsSettings(settings, conf, arch, compiler)
 	elseif family == "unix" then
 		if platform == "macosx" then
-			GenerateMacOSXSettings(settings, settings2, conf, arch, compiler)
+			GenerateMacOSXSettings(settings, conf, arch, compiler)
 		elseif platform == "solaris" then
 			GenerateSolarisSettings(settings, conf, arch, compiler)
 		else -- Linux, BSD
