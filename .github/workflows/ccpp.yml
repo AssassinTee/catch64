@@ -49,6 +49,9 @@ jobs:
         with:
           name: build_artifacts
           path: teeworlds.zip
+      - name:  Github Create Release
+        uses: frankjuniorr/github-create-release-action@v2.1.1
+
   build_windows:
     name: Build Windows
     runs-on: windows-latest
