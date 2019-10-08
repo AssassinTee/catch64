@@ -31,6 +31,7 @@ jobs:
           make everything
           make run_tests
           ./teeworlds_srv shutdown
+          cd ..
       - name: Build teeworlds with cmake in Debug mode
         run: |
           mkdir -p debug
@@ -39,7 +40,15 @@ jobs:
           make everything
           make run_tests
           ./teeworlds_srv shutdown
-          
+          cd ..
+      - name: Build Artifacts
+        run: |
+          zip teeworlds.zip build/teeworlds_srv build/teeworlds
+      - name: Deploy Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: build_artifacts
+          path: teeworlds.zip
   build_windows:
     name: Build Windows
     runs-on: windows-latest
@@ -66,21 +75,3 @@ jobs:
           cd build64
           Release\teeworlds_srv shutdown
           cd ..
-  build_mac:
-    name: Build MacOS
-    runs-on: macOS-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Prepare
-        run: |
-          brew install freetype sdl2
-          git submodule update --init
-      - name: Build Bam
-        run: |
-          git clone https://github.com/matricks/bam.git ~/bam
-          cd ~/bam/
-          git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
-          ./make_unix.sh
-      - name: Build Release
-        run: |
-          ~/bam/bam conf=release all
