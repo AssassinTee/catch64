@@ -73,9 +73,8 @@ jobs:
       - uses: actions/checkout@master
       - name: Prepare
         run: |
-          brew install cmake freetype sdl2
-          brew -v link sdl2 --overwrite
-          echo $LIBRARY_PATH
+          brew install freetype sdl2
+          export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/lib"
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
