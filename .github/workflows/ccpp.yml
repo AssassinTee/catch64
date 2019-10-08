@@ -75,7 +75,7 @@ jobs:
         run: |
           brew install cmake freetype sdl2
           brew -v link sdl2 --overwrite
-          echo $PATH
+          echo $LIBRARY_PATH
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
