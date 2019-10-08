@@ -74,7 +74,7 @@ jobs:
       - name: Prepare
         run: |
           brew install freetype sdl2
-          brew doctor
+          ls -l /usr/local/bin
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
