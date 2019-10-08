@@ -150,10 +150,6 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 
 	-- Add requirements for Server & Client
 	BuildGameCommon(settings)
-	
-	-- c++ 11
-	settings.cc.flags:Add("--std=c++11")
-	settings.link.flags:Add("--std=c++11")
 
 	-- Server
 	settings.link.frameworks:Add("Cocoa")
@@ -350,6 +346,10 @@ function BuildClient(settings, family, platform)
 end
 
 function BuildServer(settings, family, platform)
+	-- c++ 11
+	settings.cc.flags:Add("--std=c++11")
+	settings.link.flags:Add("--std=c++11")
+	
 	local server = Compile(settings, Collect("src/engine/server/*.cpp"))
 	
 	local game_server = Compile(settings, CollectRecursive("src/game/server/*.cpp"), SharedServerFiles())
