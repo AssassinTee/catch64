@@ -52,7 +52,7 @@ jobs:
       - name:  Github Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: frankjuniorr/github-create-release-action@v2.1.1
+        uses: JasonEtco/upload-to-release@master
         with:
           args: teeworlds.zip
 
