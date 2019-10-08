@@ -350,7 +350,7 @@ end
 function BuildServer(settings, family, platform)
 	-- c++ 11
 	settings.cc.flags:Add("--std=c++11")
-	settings.link.flags:Add("--std=c++11")
+	--settings.link.flags:Add("--std=c++11")
 	
 	local server = Compile(settings, Collect("src/engine/server/*.cpp"))
 	
