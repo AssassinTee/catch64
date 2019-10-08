@@ -74,7 +74,7 @@ jobs:
       - name: Prepare
         run: |
           brew install cmake freetype sdl2
-          brew -v link go --overwrite
+          brew -v link sdl2 --overwrite
           git submodule update --init
           mkdir build; cd build
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
