@@ -75,26 +75,7 @@ jobs:
         run: |
           brew install freetype sdl2
           git submodule update --init
-      - name: Build Bam
+          cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
+      - name: Build Release
         run: |
-          git clone https://github.com/matricks/bam.git ~/bam
-          cd ~/bam/
-          git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
-          ./make_unix.sh
-      - name: Build Release with Bam
-        run: |
-          ~/bam/bam conf=release all
-      - name: Test Release
-        run: |
-          ./teeworlds_srv shutdown
-      - name: Clean Release build
-        run: |
-          rm teeworlds_srv
-          rm teeworlds
-      - name: Build Debug wiht Bam
-        run: |
-          ~/bam/bam conf=debug all
-      - name: Test Debug
-        run: |
-          ./teeworlds_srv shutdown
-          
+          make everything
