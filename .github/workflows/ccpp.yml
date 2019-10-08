@@ -73,6 +73,8 @@ jobs:
       - uses: actions/checkout@master
       - name: Prepare
         run: |
+          export CFLAGS="-Wdeclaration-after-statement -Werror"
+          export CXXFLAGS="-Werror"
           brew install cmake freetype sdl2
           brew -v link sdl2 --overwrite
           git submodule update --init
