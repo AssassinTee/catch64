@@ -53,6 +53,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: frankjuniorr/github-create-release-action@v2.1.1
+        with:
+          args: teeworlds.zip
 
   build_windows:
     name: Build Windows
