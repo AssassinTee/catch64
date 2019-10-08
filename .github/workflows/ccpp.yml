@@ -43,6 +43,7 @@ jobs:
           cd ..
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           name: Ubuntu-latest
           files: |
@@ -79,6 +80,7 @@ jobs:
           cd ..
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           name: Windows-latest
           files: |
@@ -106,6 +108,7 @@ jobs:
           ~/bam/bam conf=release all
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           name: MacOS-latest
           files: |
