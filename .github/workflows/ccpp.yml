@@ -77,7 +77,7 @@ jobs:
           ls -l /usr/local/bin
           git submodule update --init
           mkdir build; cd build
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
+          sudo cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" ..
           cd ..
           mkdir build_debug; cd build_debug
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
