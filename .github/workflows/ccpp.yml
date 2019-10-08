@@ -75,8 +75,6 @@ jobs:
         run: |
           brew install freetype sdl2
           git submodule update --init
-          mkdir build
-          mkdir build_debug
       - name: Build Bam
         run: |
           git clone https://github.com/matricks/bam.git ~/bam
@@ -85,18 +83,17 @@ jobs:
           ./make_unix.sh
       - name: Build Release with Bam
         run: |
-          cd build
           ~/bam/bam conf=release all
-          cd ..
-      - name: Build Debug wiht Bam
-        run: |
-          cd build_debug
-          ~/bam/bam conf=debug all
-          cd ..
       - name: Test Release
         run: |
-          build/teeworlds_srv shutdown
+          ./teeworlds_srv shutdown
+      - name: Clean Release build
+          rm teeworlds_srv
+          rm teeworlds
+      - name: Build Debug wiht Bam
+        run: |
+          ~/bam/bam conf=debug all
       - name: Test Debug
         run: |
-          build_debug/teeworlds_srv shutdown
+          ./teeworlds_srv shutdown
           
