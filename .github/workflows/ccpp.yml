@@ -84,8 +84,8 @@ jobs:
           cd ..
       - name: Bundle Zip-Package
         run: |
-          zip Catch64_windows32.zip build32\Release\teeworlds_srv
-          zip Catch64_windows64.zip build64\Release\teeworlds_srv
+          jar -cMf Catch64_windows32.zip build32\Release\teeworlds_srv
+          jar -cMf Catch64_windows64.zip build64\Release\teeworlds_srv
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -116,7 +116,7 @@ jobs:
           ~/bam/bam conf=release all
       - name: Bundle Zip-Package
         run: |
-          zip Catch64_macOS.zip teeworlds_srv
+          zip Catch64_macOS.zip build/x86_64/release/teeworlds_srv
       - name: Deploy Github Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
