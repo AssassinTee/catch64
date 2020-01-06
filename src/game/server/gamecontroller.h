@@ -95,7 +95,7 @@ class IGameController
 	int ClampTeam(int Team) const;
 	
 	//Commands
-	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
+	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
 	void ComHelp(class CPlayer *pPlayer, const char *pArgs);
 	void ComInfo(class CPlayer *pPlayer, const char *pArgs);
 
