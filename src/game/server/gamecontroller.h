@@ -128,7 +128,7 @@ protected:
 
 	int m_TopscoreCount;
 
-	typedef void (*COMMAND_CALLBACK)(class CPlayer *pPlayer, const char *pArgs);
+	typedef void (*COMMAND_CALLBACK)(class IGameController *pGameController, class CPlayer *pPlayer, const char *pArgs);
 	
 	//Commands
 	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
