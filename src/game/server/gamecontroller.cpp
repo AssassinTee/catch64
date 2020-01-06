@@ -252,20 +252,11 @@ int IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int
 
 void IGameController::OnCharacterSpawn(CCharacter *pChr)
 {
-<<<<<<< HEAD
     // default health
     pChr->IncreaseHealth(10);
 
 	int Weapon = m_StartWeapon;
 	pChr->GiveWeapon(Weapon, -1);
-=======
-	// default health
-	pChr->IncreaseHealth(10);
-
-	// give default weapons
-	pChr->GiveWeapon(WEAPON_HAMMER, -1);
-	pChr->GiveWeapon(WEAPON_GUN, 10);
->>>>>>> f7b66851fe94ff06e90238d03cdc9f90a0cc7c44
 }
 
 void IGameController::OnFlagReturn(CFlag *pFlag)
