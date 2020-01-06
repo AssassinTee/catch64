@@ -142,7 +142,8 @@ public:
 	void CreateSound(vec2 Pos, int Sound, int64 Mask=-1);
 
     //network command
-	void SendCommand(int ChatterClientID, const std::string& command);
+	/*DEPRECATED*/
+	//void SendCommand(int ChatterClientID, const std::string& command);
     void SendServerInfo(const char* pText, int ClientID);
 
 	// network

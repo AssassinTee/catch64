@@ -193,6 +193,7 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
+/* DEPRECATED
 void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
 {
     if(m_apPlayers[ChatterClientID]->m_LastCommand && m_apPlayers[ChatterClientID]->m_LastCommand+Server()->TickSpeed()*0.5 > Server()->Tick())
@@ -236,6 +237,7 @@ void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
         Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
     }
 }
+*/
 
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
@@ -254,21 +256,6 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 		str_copy(aBufMode, "chat", sizeof(aBufMode));
 
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, aBufMode, aBuf);
-
-    /*Gamemod commands*/
-    if(Mode == CHAT_ALL && (pText[0] == '!' || pText[0] == '/'))
-    {
-        const std::vector<std::string> commands = {"cmdlist", "info", "help", "top5", "rank"};
-        for(auto it = commands.begin(); it != commands.end(); ++it)
-        {
-            if(!str_comp(pText, ("!"+(*it)).c_str()) || !str_comp(pText, ("/"+(*it)).c_str()))
-            {
-                //Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
-                SendCommand(ChatterClientID, *it);
-                return;
-            }
-        }
-    }
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = Mode;
