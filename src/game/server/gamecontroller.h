@@ -245,10 +245,7 @@ public:
 	bool IsPlayerReadyMode() const;
 	bool IsTeamChangeAllowed() const;
 	bool IsTeamplay() const { return m_GameFlags&GAMEFLAG_TEAMS; }
-<<<<<<< HEAD
-=======
 	bool IsSurvival() const { return m_GameFlags&GAMEFLAG_SURVIVAL; }
->>>>>>> f7b66851fe94ff06e90238d03cdc9f90a0cc7c44
 
 	const char *GetGameType() const { return m_pGameType; }
 
