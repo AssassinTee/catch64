@@ -131,10 +131,9 @@ protected:
 	typedef void (*COMMAND_CALLBACK)(class CPlayer *pPlayer, const char *pArgs);
 	
 	//Commands
-	
-	static void ComSendMessageList(class IServer *pServer, std::vector<std::string>& messageList, const int ClientID);
-	static void ComHelp(class CPlayer *pPlayer, const char *pArgs);
-	static void ComInfo(class CPlayer *pPlayer, const char *pArgs);
+	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
+	static void ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
+	static void ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
 
 	struct CChatCommand 
 	{

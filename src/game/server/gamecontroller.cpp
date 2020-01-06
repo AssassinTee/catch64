@@ -1333,7 +1333,7 @@ void IGameController::OnPlayerCommand(CPlayer *pPlayer, const char *pCommandName
 	CChatCommand *pCommand = CommandsManager()->GetCommand(pCommandName);
 
 	if(pCommand)
-		pCommand->m_pfnCallback(pPlayer, pCommandArgs);
+		pCommand->m_pfnCallback(this, pPlayer, pCommandArgs);
 }
 
 void IGameController::CChatCommands::OnInit()
@@ -1343,7 +1343,7 @@ void IGameController::CChatCommands::OnInit()
 	AddCommand("info", "s", "show authors and mod description", ComInfo);
 }
 
-void IGameController::ComSendMessageList(IServer* pServer, std::vector<std::string>& messageList, const int ClientID)
+void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
 {
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = CHAT_ALL;
@@ -1353,25 +1353,25 @@ void IGameController::ComSendMessageList(IServer* pServer, std::vector<std::stri
     for(auto it = messageList.begin(); it != messageList.end(); ++it)
     {
         Msg.m_pMessage = it->c_str();
-        pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+        m_pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
     }
 }
 
-void IGameController::ComHelp(class CPlayer *pPlayer, const char *pArgs)
+void IGameController::ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
 {
 	std::vector<std::string> helplist = {"###Help###",
 		"You start in your team", 
 		"If you hit a player, he is in your team, too", 
 		"Very easy :D"};
-	ComSendMessageList(pPlayer->Server(), helplist, pPlayer->GetCID());
+	pGameController->ComSendMessageList(pPlayer->Server(), helplist, pPlayer->GetCID());
 }
 
-void IGameController::ComInfo(class CPlayer *pPlayer, const char *pArgs)
+void IGameController::ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
 {
 	std::vector<std::string> infolist = {"###Info###",
 		"Catch64 by AssassinTee", 
 		"You like it? Give me a Star on GitHub!", 
 		"https://github.com/AssassinTee/catch64",
 		"You should use Client 0.7.3 or higher!"};
-	ComSendMessageList(pPlayer->Server(), infolist, pPlayer->GetCID());
+	pGameController->ComSendMessageList(pPlayer->Server(), infolist, pPlayer->GetCID());
 }
