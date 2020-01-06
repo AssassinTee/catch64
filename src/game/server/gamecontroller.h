@@ -8,6 +8,7 @@
 
 #include <generated/protocol.h>
 #include <vector>
+#include <string>
 
 /*
 	Class: Game Controller
