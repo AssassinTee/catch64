@@ -1363,7 +1363,7 @@ void IGameController::ComHelp(class IGameController* pGameController, class CPla
 		"You start in your team", 
 		"If you hit a player, he is in your team, too", 
 		"Very easy :D"};
-	pGameController->ComSendMessageList(pPlayer->Server(), helplist, pPlayer->GetCID());
+	pGameController->ComSendMessageList(helplist, pPlayer->GetCID());
 }
 
 void IGameController::ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
@@ -1373,5 +1373,5 @@ void IGameController::ComInfo(class IGameController* pGameController, class CPla
 		"You like it? Give me a Star on GitHub!", 
 		"https://github.com/AssassinTee/catch64",
 		"You should use Client 0.7.3 or higher!"};
-	pGameController->ComSendMessageList(pPlayer->Server(), infolist, pPlayer->GetCID());
+	pGameController->ComSendMessageList(infolist, pPlayer->GetCID());
 }
