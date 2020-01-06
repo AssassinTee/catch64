@@ -1339,8 +1339,8 @@ void IGameController::OnPlayerCommand(CPlayer *pPlayer, const char *pCommandName
 void IGameController::CChatCommands::OnInit()
 {
 	//AddCommand("example", "si", "I am a description", Com_Example);
-	AddCommand("help", "s", "how to play", ComHelp);
-	AddCommand("info", "s", "show authors and mod description", ComInfo);
+	AddCommand("help", "", "how to play", ComHelp);
+	AddCommand("info", "", "show authors and mod description", ComInfo);
 }
 
 void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
