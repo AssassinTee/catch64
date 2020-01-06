@@ -9,5 +9,5 @@
 #define CLIENT_VERSION 0x0704
 #define SETTINGS_FILENAME "settings07"
 static const char GAME_RELEASE_VERSION[8] = "0.7.4";
-#define CATCH_VERSION "1.0.9"
+#define CATCH_VERSION "1.1.1"
 #endif
