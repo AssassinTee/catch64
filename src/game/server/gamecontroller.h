@@ -132,7 +132,7 @@ protected:
 	
 	//Commands
 	
-	static void ComSendMessageList(Server* pServer, std::vector<std::string>& messageList, const int ClientID);
+	static void ComSendMessageList(class IServer *pServer, std::vector<std::string>& messageList, const int ClientID);
 	static void ComHelp(class CPlayer *pPlayer, const char *pArgs);
 	static void ComInfo(class CPlayer *pPlayer, const char *pArgs);
 
