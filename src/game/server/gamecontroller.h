@@ -94,11 +94,6 @@ class IGameController
 
 	// team
 	int ClampTeam(int Team) const;
-	
-	//Commands
-	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
-	void ComHelp(class CPlayer *pPlayer, const char *pArgs);
-	void ComInfo(class CPlayer *pPlayer, const char *pArgs);
 
 protected:
 	CGameContext *GameServer() const { return m_pGameServer; }
@@ -134,8 +129,12 @@ protected:
 	int m_TopscoreCount;
 
 	typedef void (*COMMAND_CALLBACK)(class CPlayer *pPlayer, const char *pArgs);
-
-	//static void Com_Example(class CPlayer *pPlayer, const char *pArgs);
+	
+	//Commands
+	
+	static void ComSendMessageList(Server* pServer, std::vector<std::string>& messageList, const int ClientID);
+	static void ComHelp(class CPlayer *pPlayer, const char *pArgs);
+	static void ComInfo(class CPlayer *pPlayer, const char *pArgs);
 
 	struct CChatCommand 
 	{

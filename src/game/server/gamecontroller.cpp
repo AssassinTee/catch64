@@ -1343,7 +1343,7 @@ void IGameController::CChatCommands::OnInit()
 	AddCommand("info", "s", "show authors and mod description", ComInfo);
 }
 
-void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
+void IGameController::ComSendMessageList(IServer* pServer, std::vector<std::string>& messageList, const int ClientID)
 {
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = CHAT_ALL;
@@ -1353,7 +1353,7 @@ void IGameController::ComSendMessageList(std::vector<std::string>& messageList, 
     for(auto it = messageList.begin(); it != messageList.end(); ++it)
     {
         Msg.m_pMessage = it->c_str();
-        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+        pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
     }
 }
 
@@ -1363,7 +1363,7 @@ void IGameController::ComHelp(class CPlayer *pPlayer, const char *pArgs)
 		"You start in your team", 
 		"If you hit a player, he is in your team, too", 
 		"Very easy :D"};
-	ComSendMessageList(helplist, pPlayer->GetCID());
+	ComSendMessageList(pPlayer->Server(), helplist, pPlayer->GetCID());
 }
 
 void IGameController::ComInfo(class CPlayer *pPlayer, const char *pArgs)
@@ -1373,5 +1373,5 @@ void IGameController::ComInfo(class CPlayer *pPlayer, const char *pArgs)
 		"You like it? Give me a Star on GitHub!", 
 		"https://github.com/AssassinTee/catch64",
 		"You should use Client 0.7.3 or higher!"};
-	ComSendMessageList(infolist, pPlayer->GetCID());
+	ComSendMessageList(pPlayer->Server(), infolist, pPlayer->GetCID());
 }
