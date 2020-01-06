@@ -1339,9 +1339,39 @@ void IGameController::OnPlayerCommand(CPlayer *pPlayer, const char *pCommandName
 void IGameController::CChatCommands::OnInit()
 {
 	//AddCommand("example", "si", "I am a description", Com_Example);
+	AddCommand("help", "s", "how to play", ComHelp);
+	AddCommand("info", "s", "show authors and mod description", ComInfo);
 }
 
-/*void IGameController::Com_Example(class CPlayer *pPlayer, const char *pArgs)
+void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
 {
-	// Do something with the player here
-}*/
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Mode = CHAT_ALL;
+	Msg.m_ClientID = -1;
+
+	Msg.m_TargetID = ClientID;
+    for(auto it = messageList.begin(); it != messageList.end(); ++it)
+    {
+        Msg.m_pMessage = it->c_str();
+        Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    }
+}
+
+void IGameController::ComHelp(class CPlayer *pPlayer, const char *pArgs)
+{
+	std::vector<std::string> helplist = {"###Help###",
+		"You start in your team", 
+		"If you hit a player, he is in your team, too", 
+		"Very easy :D"};
+	ComSendMessageList(helplist, pPlayer->GetCID());
+}
+
+void IGameController::ComInfo(class CPlayer *pPlayer, const char *pArgs)
+{
+	std::vector<std::string> infolist = {"###Info###",
+		"Catch64 by AssassinTee", 
+		"You like it? Give me a Star on GitHub!", 
+		"https://github.com/AssassinTee/catch64",
+		"You should use Client 0.7.3 or higher!"};
+	ComSendMessageList(infolist, pPlayer->GetCID());
+}
