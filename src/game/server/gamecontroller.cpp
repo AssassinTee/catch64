@@ -11,6 +11,7 @@
 #include "player.h"
 
 #include "teamhandler.h"
+#include <sstream>
 
 IGameController::IGameController(CGameContext *pGameServer)
 {
@@ -1373,5 +1374,8 @@ void IGameController::ComInfo(class IGameController* pGameController, class CPla
 		"You like it? Give me a Star on GitHub!", 
 		"https://github.com/AssassinTee/catch64",
 		"You should use Client 0.7.3 or higher!"};
+	std::stringstream ss;
+    ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
+    infolist.push_back(ss.str());
 	pGameController->ComSendMessageList(infolist, pPlayer->GetCID());
 }
