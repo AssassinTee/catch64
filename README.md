@@ -12,6 +12,24 @@ If you hit someone, he is in your team and gets your colors and skin.
 If he hits someone, the hit player is in your team, too.
 Colorcatch is easy to understand.
 
+## Installing
+
+You need the dependencies for hosting AND/OR compiling the server
+
+```
+# Debian/Ubuntu
+sudo apt install build-essential cmake git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3
+
+# Fedora
+sudo dnf install @development-tools cmake gcc-c++ git freetype-devel mesa-libGLU-devel pnglite-devel python3 SDL2-devel wavpack-devel
+
+# Arch Linux (doesn't have pnglite in its repositories)
+sudo pacman -S --needed base-devel cmake freetype2 git glu python sdl2 wavpack
+
+# macOS
+sudo brew install cmake freetype sdl2
+```
+
 ## Getting Started
 
 * clone this repository
@@ -28,8 +46,15 @@ Colorcatch is easy to understand.
 
 * Have Fun!
 
-.
-You may want to take a look at the variables of this gamemode.
+## Variables
+
+| command                 | default | min | max  | description                        |
+| ----------------------- | ------- | --- | ---- | ---------------------------------- |
+| sv_allow_pickups        | 0       | 0   | 1    | Spawn hearts and shields           |
+| sv_allow_weapon_pickups | 0       | 0   | 1    | Spawn weapons                      |
+| sv_selfkill_cooldown    | 15      | 3   | 9999 | Cooldown after selfkill            |
+| sv_win_bonus            | 5       | 0   | 9999 | Bonus for winning a round          |
+| sv_min_grenade_damage   | 4       | 0   | 6    | Minimum damage required for a kill |
 
 ## Contributing
 

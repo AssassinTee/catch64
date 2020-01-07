@@ -1,0 +1,128 @@
+name: All OS
+on:
+  push:
+    branches: 
+      - master
+    tags:
+      - 'v*.*.*'
+jobs:
+  build_ubuntu:
+    name: Build Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Prepare
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
+          git submodule update --init
+      - name: Build Bam
+        run: |
+          git clone https://github.com/matricks/bam.git ~/bam
+          cd ~/bam/
+          git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
+          ./make_unix.sh
+      - name: Build Teeworlds with Bam
+        run: |
+          ~/bam/bam conf=release all
+      - name: Build teeworlds with cmake in Release mode
+        run: |
+          mkdir -p release
+          cd release
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DOpenGL_GL_PREFERENCE=LEGACY ..
+          make everything
+          make run_tests
+          ./teeworlds_srv shutdown
+          cd ..
+      - name: Build teeworlds with cmake in Debug mode
+        run: |
+          mkdir -p debug
+          cd debug
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DOpenGL_GL_PREFERENCE=LEGACY ..
+          make everything
+          make run_tests
+          ./teeworlds_srv shutdown
+          cd ..
+      - name: Bundle Zip-Package
+        run: |
+          zip Catch64_ubuntu.zip release/teeworlds_srv
+      - name: Deploy Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: Ubuntu-latest
+          files: |
+            Catch64_ubuntu.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Prepare
+        run: |
+          git submodule update --init
+          md build32 & cd build32
+          cmake -Werror=dev -G "Visual Studio 16 2019" ..
+          cd ..
+          md build64 & cd build64
+          cmake -Werror=dev -G "Visual Studio 16 2019" -A x64 ..
+          cd ..
+      - name: Build
+        run: |
+          cmake --build build32 --config Release --target everything
+          cmake --build build64 --config Release --target everything
+      - name: Test
+        run: |
+          cd build32
+          Release\teeworlds_srv shutdown
+          cd ..
+          cd build64
+          Release\teeworlds_srv shutdown
+          cd ..
+      - name: Bundle Zip-Package
+        run: |
+          jar -cMf Catch64_windows32.zip build32\Release\teeworlds_srv.exe
+          jar -cMf Catch64_windows64.zip build64\Release\teeworlds_srv.exe
+      - name: Deploy Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: Windows-latest
+          files: |
+            Catch64_windows32.zip
+            Catch64_windows64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build_mac:
+    name: Build MacOS
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Prepare
+        run: |
+          brew install freetype sdl2
+          git submodule update --init
+      - name: Build Bam
+        run: |
+          git clone https://github.com/matricks/bam.git ~/bam
+          cd ~/bam/
+          git reset --hard f012dd9a3e38295b8a45af5a101d29573381f169
+          ./make_unix.sh
+      - name: Build Release
+        run: |
+          ~/bam/bam conf=release all
+      - name: Bundle Zip-Package
+        run: |
+          zip Catch64_macOS.zip build/x86_64/release/teeworlds_srv
+      - name: Deploy Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: MacOS-latest
+          files: |
+            Catch64_macOS.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
