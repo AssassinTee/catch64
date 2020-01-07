@@ -13,6 +13,8 @@
 
 #include "entities/character.h"
 #include "gamemodes/catch64.h"
+
+#include "entities/projectile.h"
 #include "gamecontext.h"
 #include "player.h"
 
@@ -191,6 +193,7 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
+/* DEPRECATED
 void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
 {
     if(m_apPlayers[ChatterClientID]->m_LastCommand && m_apPlayers[ChatterClientID]->m_LastCommand+Server()->TickSpeed()*0.5 > Server()->Tick())
@@ -234,6 +237,7 @@ void CGameContext::SendCommand(int ChatterClientID, const std::string& command)
         Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
     }
 }
+*/
 
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
@@ -252,21 +256,6 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 		str_copy(aBufMode, "chat", sizeof(aBufMode));
 
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, aBufMode, aBuf);
-
-    /*Gamemod commands*/
-    if(Mode == CHAT_ALL && (pText[0] == '!' || pText[0] == '/'))
-    {
-        const std::vector<std::string> commands = {"cmdlist", "info", "help", "top5", "rank"};
-        for(auto it = commands.begin(); it != commands.end(); ++it)
-        {
-            if(!str_comp(pText, ("!"+(*it)).c_str()) || !str_comp(pText, ("/"+(*it)).c_str()))
-            {
-                //Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
-                SendCommand(ChatterClientID, *it);
-                return;
-            }
-        }
-    }
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = Mode;
@@ -985,6 +974,14 @@ void CGameContext::OnClientTeamChange(int ClientID)
 {
 	if(m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 		AbortVoteOnTeamChange(ClientID);
+
+	// mark client's projectile has team projectile
+	CProjectile *p = (CProjectile *)m_World.FindFirst(CGameWorld::ENTTYPE_PROJECTILE);
+	for(; p; p = (CProjectile *)p->TypeNext())
+	{
+		if(p->GetOwner() == ClientID)
+			p->LoseOwner();
+	}
 }
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
@@ -1010,6 +1007,14 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		if(g_Config.m_SvSilentSpectatorMode && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 			Msg.m_Silent = true;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, -1);
+	}
+
+	// mark client's projectile has team projectile
+	CProjectile *p = (CProjectile *)m_World.FindFirst(CGameWorld::ENTTYPE_PROJECTILE);
+	for(; p; p = (CProjectile *)p->TypeNext())
+	{
+		if(p->GetOwner() == ClientID)
+			p->LoseOwner();
 	}
 
 	delete m_apPlayers[ClientID];
@@ -1060,9 +1065,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				int Code = str_utf8_decode(&p);
 
 				// check if unicode is not empty
-				if(Code > 0x20 && Code != 0xA0 && Code != 0x034F && (Code < 0x2000 || Code > 0x200F) && (Code < 0x2028 || Code > 0x202F) &&
-					(Code < 0x205F || Code > 0x2064) && (Code < 0x206A || Code > 0x206F) && (Code < 0xFE00 || Code > 0xFE0F) &&
-					Code != 0xFEFF && (Code < 0xFFF9 || Code > 0xFFFC))
+				if(!str_utf8_is_whitespace(Code))
 				{
 					pEnd = 0;
 				}
@@ -1134,6 +1137,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					{
 						str_format(aDesc, sizeof(aDesc), "%s", pOption->m_aDescription);
 						str_format(aCmd, sizeof(aCmd), "%s", pOption->m_aCommand);
+						char aBuf[128];
+						str_format(aBuf, sizeof(aBuf),
+							"'%d:%s' voted %s '%s' reason='%s' cmd='%s' force=%d",
+							ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
+							aDesc, pReason, aCmd, pMsg->m_Force
+						);
+						Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 						if(pMsg->m_Force)
 						{
 							Server()->SetRconCID(ClientID);
@@ -1170,6 +1180,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					Server()->GetClientAddr(KickID, aAddrStr, sizeof(aAddrStr));
 					str_format(aCmd, sizeof(aCmd), "ban %s %d Banned by vote", aAddrStr, g_Config.m_SvVoteKickBantime);
 				}
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf),
+					"'%d:%s' voted %s '%d:%s' reason='%s' cmd='%s' force=%d",
+					ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
+					KickID, Server()->ClientName(KickID), pReason, aCmd, pMsg->m_Force
+				);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				if(pMsg->m_Force)
 				{
 					Server()->SetRconCID(ClientID);
@@ -1191,6 +1208,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 				str_format(aDesc, sizeof(aDesc), "%2d: %s", SpectateID, Server()->ClientName(SpectateID));
 				str_format(aCmd, sizeof(aCmd), "set_team %d -1 %d", SpectateID, g_Config.m_SvVoteSpectateRejoindelay);
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf),
+					"'%d:%s' voted %s '%d:%s' reason='%s' cmd='%s' force=%d",
+					ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
+					SpectateID, Server()->ClientName(SpectateID), pReason, aCmd, pMsg->m_Force
+				);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				if(pMsg->m_Force)
 				{
 					Server()->SetRconCID(ClientID);
@@ -1322,6 +1346,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
             ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
             SendServerInfo("Your skinchange will apply next round", ClientID);
+
+			m_pController->OnPlayerInfoChange(pPlayer);
+		}
+		else if (MsgID == NETMSGTYPE_CL_COMMAND)
+		{
+			CNetMsg_Cl_Command *pMsg = (CNetMsg_Cl_Command*)pRawMsg;
+			m_pController->OnPlayerCommand(pPlayer, pMsg->m_Name, pMsg->m_Arguments);
 		}
 	}
 	else
@@ -1789,7 +1820,10 @@ void CGameContext::OnInit()
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
 
-	for(int i = 0; i < NUM_NETOBJTYPES; i++)
+	// HACK: only set static size for items, which were available in the first 0.7 release
+	// so new items don't break the snapshot delta
+	static const int OLD_NUM_NETOBJTYPES = 23;
+	for(int i = 0; i < OLD_NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
 	m_Layers.Init(Kernel());
@@ -1910,5 +1944,7 @@ bool CGameContext::IsClientSpectator(int ClientID) const
 const char *CGameContext::GameType() const { return m_pController && m_pController->GetGameType() ? m_pController->GetGameType() : ""; }
 const char *CGameContext::Version() const { return GAME_VERSION; }
 const char *CGameContext::NetVersion() const { return GAME_NETVERSION; }
+const char *CGameContext::NetVersionHashUsed() const { return GAME_NETVERSION_HASH_FORCED; }
+const char *CGameContext::NetVersionHashReal() const { return GAME_NETVERSION_HASH; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }

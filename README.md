@@ -1,10 +1,9 @@
 # catch64
-[![Actions Status](https://github.com/AssassinTee/catch64/workflows/All%20OS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
-[![CircleCI](https://circleci.com/gh/AssassinTee/catch64.svg?style=shield)](https://circleci.com/gh/AssassinTee/catch64)
-[![Build status](https://ci.appveyor.com/api/projects/status/uai64nkyvc8tgc36/branch/master?svg=true)](hhttps://ci.appveyor.com/project/AssassinTee/catch64)
-[![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows%20%7C%20MacOS-brightgreen)](https://github.com/AssassinTee/catch64/releases)
-![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.3.1-brightgreen.svg)
+![GitHub Actions](https://github.com/AssassinTee/catch64/workflows/Build/badge.svg)
+[![release version](https://img.shields.io/github/release/AssassinTee/catch64.svg?style=flat)](https://github.com/AssassinTee/catch64/releases)
+![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.4-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
+> _"0.7.4 - Now supports more skins"_
 
 ## Description
 catch64 is a -Mod for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
@@ -70,4 +69,4 @@ This project is licensed under the default Teeworlds license - see [license.txt]
 
 ## Great Thanks to
 
-* CircleCI integration is awesome, thank you Teeworlds devs!
+* Teeworlds devs for creating this game <3

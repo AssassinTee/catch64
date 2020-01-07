@@ -20,11 +20,16 @@ generated_icon_dir = "build/icons"
 builddir = "build/%(arch)s/%(conf)s"
 content_src_dir = "datasrc/"
 
+python_in_path = ExecuteSilent("python -V") == 0
+
 -- data compiler
 function Python(name)
 	if family == "windows" then
-		-- Python is usually registered for .py files in Windows
-		return str_replace(name, "/", "\\")
+		name = str_replace(name, "/", "\\")
+		if not python_in_path then
+			-- Python is usually registered for .py files in Windows
+			return name
+		end
 	end
 	return "python " .. name
 end
@@ -394,6 +399,7 @@ function BuildContent(settings, arch, conf)
 		dl = Python("scripts/download.py")
 		AddJob({"other/sdl/include/SDL.h", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"}, "Downloading SDL2", dl .. " sdl")
 		AddJob({"other/freetype/include/ft2build.h", "other/freetype/windows/lib" .. _arch .. "/freetype.dll"}, "Downloading freetype", dl .. " freetype")
+
 		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"))
 		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/freetype.dll", "other/freetype/windows/lib" .. _arch .. "/freetype.dll"))
 		AddDependency(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/include/SDL.h")

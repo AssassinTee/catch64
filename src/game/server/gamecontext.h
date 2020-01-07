@@ -127,6 +127,7 @@ public:
 		VOTE_CANCEL_TIME = 10,
 
 		MIN_SKINCHANGE_CLIENTVERSION = 0x0703,
+		MIN_RACE_CLIENTVERSION = 0x0704,
 	};
 	class CHeap *m_pVoteOptionHeap;
 	CVoteOptionServer *m_pVoteOptionFirst;
@@ -141,7 +142,8 @@ public:
 	void CreateSound(vec2 Pos, int Sound, int64 Mask=-1);
 
     //network command
-	void SendCommand(int ChatterClientID, const std::string& command);
+	/*DEPRECATED*/
+	//void SendCommand(int ChatterClientID, const std::string& command);
     void SendServerInfo(const char* pText, int ClientID);
 
 	// network
@@ -198,6 +200,8 @@ public:
 	virtual const char *GameType() const;
 	virtual const char *Version() const;
 	virtual const char *NetVersion() const;
+	virtual const char *NetVersionHashUsed() const;
+	virtual const char *NetVersionHashReal() const;
 };
 
 inline int64 CmaskAll() { return -1; }

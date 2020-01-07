@@ -3,6 +3,7 @@
 #include <engine/shared/config.h>
 
 #include <game/mapitems.h>
+#include <game/version.h>
 
 #include "entities/character.h"
 #include "entities/pickup.h"
@@ -11,6 +12,7 @@
 #include "player.h"
 
 #include "teamhandler.h"
+#include <sstream>
 
 IGameController::IGameController(CGameContext *pGameServer)
 {
@@ -54,6 +56,9 @@ IGameController::IGameController(CGameContext *pGameServer)
 
 	m_TopTeam = -1;
 	m_StartWeapon = 4;//Weapon laser;
+
+	// commands
+	CommandsManager()->OnInit();
 }
 
 //activity
@@ -322,6 +327,8 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 
 	// update game info
 	UpdateGameInfo(ClientID);
+
+	CommandsManager()->OnPlayerConnect(Server(), pPlayer);
 }
 
 void IGameController::OnPlayerDisconnect(CPlayer *pPlayer)
@@ -905,6 +912,11 @@ bool IGameController::IsFriendlyFire(int ClientID1, int ClientID2) const
 	return false;
 }
 
+bool IGameController::IsFriendlyTeamFire(int Team1, int Team2) const
+{
+	return IsTeamplay() && !g_Config.m_SvTeamdamage && Team1 == Team2;
+}
+
 bool IGameController::IsPlayerReadyMode() const
 {
 	return g_Config.m_SvPlayerReadyMode != 0 && (m_GameStateTimer == TIMER_INFINITE && (m_GameState == IGS_WARMUP_USER || m_GameState == IGS_GAME_PAUSED));
@@ -924,6 +936,9 @@ void IGameController::UpdateGameInfo(int ClientID)
 	GameInfoMsg.m_MatchNum = m_GameInfo.m_MatchNum;
 	GameInfoMsg.m_MatchCurrent = m_GameInfo.m_MatchCurrent;
 
+	CNetMsg_Sv_GameInfo GameInfoMsgNoRace = GameInfoMsg;
+	GameInfoMsgNoRace.m_GameFlags &= ~GAMEFLAG_RACE;
+
 	if(ClientID == -1)
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -931,11 +946,15 @@ void IGameController::UpdateGameInfo(int ClientID)
 			if(!GameServer()->m_apPlayers[i] || !Server()->ClientIngame(i))
 				continue;
 
-			Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+			CNetMsg_Sv_GameInfo *pInfoMsg = (Server()->GetClientVersion(i) < CGameContext::MIN_RACE_CLIENTVERSION) ? &GameInfoMsgNoRace : &GameInfoMsg;
+			Server()->SendPackMsg(pInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
 		}
 	}
 	else
-		Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID);
+	{
+		CNetMsg_Sv_GameInfo *pInfoMsg = (Server()->GetClientVersion(ClientID) < CGameContext::MIN_RACE_CLIENTVERSION) ? &GameInfoMsgNoRace : &GameInfoMsg;
+		Server()->SendPackMsg(pInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID);
+	}
 }
 
 // map
@@ -1034,6 +1053,7 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos) const
 		return false;
 
 	CSpawnEval Eval;
+	Eval.m_RandomSpawn = IsSurvival();
 
 	if(IsTeamplay())
 	{
@@ -1102,7 +1122,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 			continue;	// try next spawn point
 
 		vec2 P = m_aaSpawnPoints[Type][i]+Positions[Result];
-		float S = EvaluateSpawnPos(pEval, P);
+		float S = pEval->m_RandomSpawn ? random_int() : EvaluateSpawnPos(pEval, P);
 		if(!pEval->m_Got || pEval->m_Score > S)
 		{
 			pEval->m_Got = true;
@@ -1181,7 +1201,7 @@ void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);
+	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' team=%d->%d", ClientID, Server()->ClientName(ClientID), OldTeam, Team);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// update effected game settings
@@ -1232,4 +1252,131 @@ int IGameController::GetStartTeam()
 		return Team;
 	}
 	return TEAM_SPECTATORS;
+}
+
+IGameController::CChatCommands::CChatCommands()
+{
+	mem_zero(m_aCommands, sizeof(m_aCommands));
+}
+
+void IGameController::CChatCommands::AddCommand(const char *pName, const char *pArgsFormat, const char *pHelpText, COMMAND_CALLBACK pfnCallback)
+{
+	if(GetCommand(pName))
+		return;
+
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		if(!m_aCommands[i].m_Used)
+		{
+			mem_zero(&m_aCommands[i], sizeof(CChatCommand));
+
+			str_copy(m_aCommands[i].m_aName, pName, sizeof(m_aCommands[i].m_aName));
+			str_copy(m_aCommands[i].m_aHelpText, pHelpText, sizeof(m_aCommands[i].m_aHelpText));
+			str_copy(m_aCommands[i].m_aArgsFormat, pArgsFormat, sizeof(m_aCommands[i].m_aArgsFormat));
+
+			m_aCommands[i].m_pfnCallback = pfnCallback;
+			m_aCommands[i].m_Used = true;
+			break;
+		}
+	}
+}
+
+void IGameController::CChatCommands::SendRemoveCommand(IServer *pServer, const char *pName, int ID)
+{
+	CNetMsg_Sv_CommandInfoRemove Msg;
+	Msg.m_pName = pName;
+
+	pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, ID);
+}
+
+void IGameController::CChatCommands::RemoveCommand(const char *pName)
+{
+	CChatCommand *pCommand = GetCommand(pName);
+
+	if(pCommand)
+	{
+		mem_zero(pCommand, sizeof(CChatCommand));
+	}
+}
+
+IGameController::CChatCommand *IGameController::CChatCommands::GetCommand(const char *pName)
+{
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		if(m_aCommands[i].m_Used && str_comp(m_aCommands[i].m_aName, pName) == 0)
+		{
+			return &m_aCommands[i];
+		}
+	}
+	return 0;
+}
+
+void IGameController::CChatCommands::OnPlayerConnect(IServer *pServer, CPlayer *pPlayer)
+{
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		CChatCommand *pCommand = &m_aCommands[i];
+
+		if(pCommand->m_Used)
+		{
+			CNetMsg_Sv_CommandInfo Msg;
+			Msg.m_pName = pCommand->m_aName;
+			Msg.m_HelpText = pCommand->m_aHelpText;
+			Msg.m_ArgsFormat = pCommand->m_aArgsFormat;
+
+			pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, pPlayer->GetCID());
+		}
+	}
+}
+
+void IGameController::OnPlayerCommand(CPlayer *pPlayer, const char *pCommandName, const char *pCommandArgs)
+{
+	// TODO: Add a argument parser?
+	CChatCommand *pCommand = CommandsManager()->GetCommand(pCommandName);
+
+	if(pCommand)
+		pCommand->m_pfnCallback(this, pPlayer, pCommandArgs);
+}
+
+void IGameController::CChatCommands::OnInit()
+{
+	//AddCommand("example", "si", "I am a description", Com_Example);
+	AddCommand("help", "", "how to play", ComHelp);
+	AddCommand("info", "", "show authors and mod description", ComInfo);
+}
+
+void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
+{
+	CNetMsg_Sv_Chat Msg;
+	Msg.m_Mode = CHAT_ALL;
+	Msg.m_ClientID = -1;
+
+	Msg.m_TargetID = ClientID;
+    for(auto it = messageList.begin(); it != messageList.end(); ++it)
+    {
+        Msg.m_pMessage = it->c_str();
+        m_pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+    }
+}
+
+void IGameController::ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
+{
+	std::vector<std::string> helplist = {"###Help###",
+		"You start in your team", 
+		"If you hit a player, he is in your team, too", 
+		"Very easy :D"};
+	pGameController->ComSendMessageList(helplist, pPlayer->GetCID());
+}
+
+void IGameController::ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
+{
+	std::vector<std::string> infolist = {"###Info###",
+		"Catch64 by AssassinTee", 
+		"You like it? Give me a Star on GitHub!", 
+		"https://github.com/AssassinTee/catch64",
+		"You should use Client 0.7.3 or higher!"};
+	std::stringstream ss;
+    ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
+    infolist.push_back(ss.str());
+	pGameController->ComSendMessageList(infolist, pPlayer->GetCID());
 }
