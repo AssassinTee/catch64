@@ -3,6 +3,7 @@
 #include <engine/shared/config.h>
 
 #include <game/mapitems.h>
+#include <game/version.h>
 
 #include "entities/character.h"
 #include "entities/pickup.h"
