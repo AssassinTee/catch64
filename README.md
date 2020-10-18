@@ -1,5 +1,5 @@
 # catch64
-[![Actions Status](https://github.com/AssassinTee/catch64/workflows/All%20OS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
+[![Actions Status](https://github.com/AssassinTee/catch64/workflows/Build/badge.svg)](https://github.com/AssassinTee/catch64/actions)
 [![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows%20%7C%20MacOS-brightgreen)](https://github.com/AssassinTee/catch64/releases)
 ![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.5-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
