@@ -408,7 +408,8 @@ void IGameController::OnReset()
 			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 			if(m_TopscoreCount == 1)
 			{
-				GameServer()->m_apPlayers[i]->m_Score = 0;
+			    if(m_GameInfo.m_ScoreLimit)//only reset scores when a scorelimit is set
+                    GameServer()->m_apPlayers[i]->m_Score = 0;
 				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
 			}
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
