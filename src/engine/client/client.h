@@ -7,10 +7,8 @@
 
 class CGraph
 {
-public:
 	enum
 	{
-		// restrictions: Must be power of two
 		MAX_VALUES=128,
 	};
 
@@ -20,11 +18,10 @@ public:
 	float m_aColors[MAX_VALUES][3];
 	int m_Index;
 
+public:
 	void Init(float Min, float Max);
 
-	void ScaleMax();
-	void ScaleMin();
-
+	void Scale();
 	void Add(float v, float r, float g, float b);
 	void Render(IGraphics *pGraphics, IGraphics::CTextureHandle FontTexture, float x, float y, float w, float h, const char *pDescription);
 };
@@ -39,6 +36,7 @@ class CSmoothTime
 	CGraph m_Graph;
 
 	int m_SpikeCounter;
+	int m_BadnessScore; // ranges between -100 (perfect) and MAX_INT
 
 	float m_aAdjustSpeed[2]; // 0 = down, 1 = up
 public:
@@ -46,13 +44,14 @@ public:
 	void SetAdjustSpeed(int Direction, float Value);
 
 	int64 Get(int64 Now);
+	inline int GetStabilityScore() const { return m_BadnessScore; }
 
 	void UpdateInt(int64 Target);
 	void Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustDirection);
 };
 
 
-class CClient : public IClient, public CDemoPlayer::IListner
+class CClient : public IClient, public CDemoPlayer::IListener
 {
 	// needed interfaces
 	IEngine *m_pEngine;
@@ -62,6 +61,8 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	IEngineSound *m_pSound;
 	IGameClient *m_pGameClient;
 	IEngineMap *m_pMap;
+	IConfigManager *m_pConfigManager;
+	CConfig *m_pConfig;
 	IConsole *m_pConsole;
 	IStorage *m_pStorage;
 	IEngineMasterServer *m_pMasterServer;
@@ -82,11 +83,10 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CMapChecker m_MapChecker;
 
 	char m_aServerAddressStr[256];
+	char m_aServerPassword[128];
 
 	unsigned m_SnapshotParts;
 	int64 m_LocalStartTime;
-
-	IGraphics::CTextureHandle m_DebugFont;
 
 	int64 m_LastRenderTime;
 	int64 m_LastCpuTime;
@@ -118,7 +118,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 
 	//
 	char m_aCurrentMap[256];
-	char m_aCurrentMapPath[256];
+	char m_aCurrentMapPath[IO_MAX_PATH_LENGTH];
 	SHA256_DIGEST m_CurrentMapSha256;
 	unsigned m_CurrentMapCrc;
 
@@ -126,9 +126,10 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	char m_aCmdConnect[256];
 
 	// map download
-	char m_aMapdownloadFilename[256];
-	char m_aMapdownloadName[256];
-	IOHANDLE m_MapdownloadFile;
+	char m_aMapdownloadFilename[IO_MAX_PATH_LENGTH];
+	char m_aMapdownloadFilenameTemp[IO_MAX_PATH_LENGTH];
+	char m_aMapdownloadName[IO_MAX_PATH_LENGTH];
+	IOHANDLE m_MapdownloadFileTemp;
 	int m_MapdownloadChunk;
 	int m_MapdownloadChunkNum;
 	int m_MapDownloadChunkSize;
@@ -162,8 +163,8 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	class CSnapshotStorage m_SnapshotStorage;
 	CSnapshotStorage::CHolder *m_aSnapshots[NUM_SNAPSHOT_TYPES];
 
-	int m_RecivedSnapshots;
-	char m_aSnapshotIncommingData[CSnapshot::MAX_SIZE];
+	int m_ReceivedSnapshots;
+	char m_aSnapshotIncomingData[CSnapshot::MAX_SIZE];
 
 	class CSnapshotStorage::CHolder m_aDemorecSnapshotHolders[NUM_SNAPSHOT_TYPES];
 	char *m_aDemorecSnapshotData[NUM_SNAPSHOT_TYPES][2][CSnapshot::MAX_SIZE];
@@ -198,6 +199,9 @@ public:
 	IEngineSound *Sound() { return m_pSound; }
 	IGameClient *GameClient() { return m_pGameClient; }
 	IEngineMasterServer *MasterServer() { return m_pMasterServer; }
+	IConfigManager *ConfigManager() { return m_pConfigManager; }
+	CConfig *Config() { return m_pConfig; }
+	IConsole *Console() { return m_pConsole; }
 	IStorage *Storage() { return m_pStorage; }
 
 	CClient();
@@ -215,10 +219,9 @@ public:
 	virtual void Rcon(const char *pCmd);
 
 	virtual bool ConnectionProblems() const;
+	virtual int GetInputtimeMarginStabilityScore();
 
 	virtual bool SoundInitFailed() const { return m_SoundInitFailed; }
-
-	virtual IGraphics::CTextureHandle GetDebugFont() const { return m_DebugFont; }
 
 	void SendInput();
 
@@ -234,15 +237,15 @@ public:
 	// called when the map is loaded and we should init for a new round
 	void OnEnterGame();
 	virtual void EnterGame();
+	void OnClientOnline();
 
 	virtual void Connect(const char *pAddress);
 	void DisconnectWithReason(const char *pReason);
 	virtual void Disconnect();
+	const char *ServerAddress() const { return m_aServerAddressStr; }
 
 
-	virtual void GetServerInfo(CServerInfo *pServerInfo) const;
-
-	int LoadData();
+	virtual void GetServerInfo(CServerInfo *pServerInfo);
 
 	// ---
 
@@ -326,7 +329,7 @@ public:
 
 	// gfx
 	void SwitchWindowScreen(int Index);
-	void ToggleFullscreen();
+	bool ToggleFullscreen();
 	void ToggleWindowBordered();
 	void ToggleWindowVSync();
 };

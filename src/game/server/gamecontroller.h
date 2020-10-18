@@ -6,6 +6,8 @@
 #include <base/vmath.h>
 #include <base/tl/array.h>
 
+#include <game/commands.h>
+
 #include <generated/protocol.h>
 #include <vector>
 #include <string>
@@ -18,6 +20,7 @@
 class IGameController
 {
 	class CGameContext *m_pGameServer;
+	class CConfig *m_pConfig;
 	class IServer *m_pServer;
 
 	// activity
@@ -97,6 +100,7 @@ class IGameController
 
 protected:
 	CGameContext *GameServer() const { return m_pGameServer; }
+	CConfig *Config() const { return m_pConfig; }
 	IServer *Server() const { return m_pServer; }
 
 	// game
@@ -128,48 +132,6 @@ protected:
 
 	int m_TopscoreCount;
 
-	typedef void (*COMMAND_CALLBACK)(class IGameController *pGameController, class CPlayer *pPlayer, const char *pArgs);
-	
-	//Commands
-	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
-	static void ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
-	static void ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
-
-	struct CChatCommand 
-	{
-		char m_aName[32];
-		char m_aHelpText[64];
-		char m_aArgsFormat[16];
-		COMMAND_CALLBACK m_pfnCallback;
-		bool m_Used;
-	};
-
-	class CChatCommands
-	{
-		enum
-		{
-			// 8 is the number of vanilla commands, 14 the number of commands left to fill the chat.
-			MAX_COMMANDS = 8 + 14
-		};
-
-		CChatCommand m_aCommands[MAX_COMMANDS];
-	public:
-		CChatCommands();
-
-		// Format: i = int, s = string, p = playername, c = subcommand
-		void AddCommand(const char *pName, const char *pArgsFormat, const char *pHelpText, COMMAND_CALLBACK pfnCallback);
-		void RemoveCommand(const char *pName);
-		void SendRemoveCommand(class IServer *pServer, const char *pName, int ID);
-		CChatCommand *GetCommand(const char *pName);
-
-		void OnPlayerConnect(class IServer *pServer, class CPlayer *pPlayer);
-
-		void OnInit();
-	};
-
-	CChatCommands m_Commands;
-
-	CChatCommands *CommandsManager() { return &m_Commands; }
 
 public:
 	IGameController(class CGameContext *pGameServer);
@@ -230,10 +192,15 @@ public:
 	void DoPause(int Seconds) { SetGameState(IGS_GAME_PAUSED, Seconds); }
 	void DoWarmup(int Seconds)
 	{
-		if(m_GameState==IGS_WARMUP_GAME)
-			SetGameState(IGS_WARMUP_GAME, 0);
-		else
-			SetGameState(IGS_WARMUP_USER, Seconds);
+		SetGameState(IGS_WARMUP_USER, Seconds);
+	}
+	void AbortWarmup()
+	{
+		if((m_GameState == IGS_WARMUP_GAME || m_GameState == IGS_WARMUP_USER)
+			&& m_GameStateTimer != TIMER_INFINITE)
+		{
+			SetGameState(IGS_GAME_RUNNING);
+		}
 	}
 	void SwapTeamscore();
 
@@ -271,8 +238,12 @@ public:
 	int GetRealPlayerNum() const { return m_aTeamSize[TEAM_RED]+m_aTeamSize[TEAM_BLUE]; }
 	int GetStartTeam();
 
+
 	void SetStartWeapon(int W){ m_StartWeapon = W;}
 	int GetStartWeapon(){ return m_StartWeapon;}
+
+	//static void Com_Example(IConsole::IResult *pResult, void *pContext);
+	virtual void RegisterChatCommands(CCommandManager *pManager);
 };
 
 #endif

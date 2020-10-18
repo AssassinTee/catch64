@@ -16,7 +16,7 @@ public:
 		SKINFLAG_STANDARD=1<<1,
 
 		DARKEST_COLOR_LGT=61,
-		
+
 		NUM_COLOR_COMPONENTS=4,
 
 		HAT_NUM=2,
@@ -26,7 +26,7 @@ public:
 	struct CSkinPart
 	{
 		int m_Flags;
-		char m_aName[24];
+		char m_aName[MAX_SKIN_LENGTH*UTF8_BYTE_LENGTH];
 		IGraphics::CTextureHandle m_OrgTexture;
 		IGraphics::CTextureHandle m_ColorTexture;
 		vec3 m_BloodColor;
@@ -37,7 +37,7 @@ public:
 	struct CSkin
 	{
 		int m_Flags;
-		char m_aName[24];
+		char m_aName[MAX_SKIN_LENGTH*UTF8_BYTE_LENGTH];
 		const CSkinPart *m_apParts[NUM_SKINPARTS];
 		int m_aPartColors[NUM_SKINPARTS];
 		int m_aUseCustomColors[NUM_SKINPARTS];
@@ -49,13 +49,13 @@ public:
 	static const char * const ms_apSkinPartNames[NUM_SKINPARTS];
 	static const char * const ms_apColorComponents[NUM_COLOR_COMPONENTS];
 
-	static char * const ms_apSkinVariables[NUM_SKINPARTS];
-	static int * const ms_apUCCVariables[NUM_SKINPARTS]; // use custom color
-	static int * const ms_apColorVariables[NUM_SKINPARTS];
+	static char *ms_apSkinVariables[NUM_SKINPARTS];
+	static int *ms_apUCCVariables[NUM_SKINPARTS]; // use custom color
+	static int *ms_apColorVariables[NUM_SKINPARTS];
 	IGraphics::CTextureHandle m_XmasHatTexture;
 	IGraphics::CTextureHandle m_BotTexture;
 
-	//
+	int GetInitAmount() const;
 	void OnInit();
 
 	void AddSkin(const char *pSkinName);
@@ -74,6 +74,8 @@ public:
 
 	// returns true if everything was valid and nothing changed
 	bool ValidateSkinParts(char *aPartNames[NUM_SKINPARTS], int *aUseCustomColors, int* aPartColors, int GameFlags) const;
+
+	void SaveSkinfile(const char *pSaveSkinName);
 
 private:
 	int m_ScanningPart;

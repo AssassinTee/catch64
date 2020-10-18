@@ -59,12 +59,12 @@ void CMenus::RenderGame(CUIRect MainView)
 
 	float Spacing = 3.0f;
 	float ButtonWidth = (MainView.w/6.0f)-(Spacing*5.0)/6.0f;
-	
+
 	// cut view
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	float NoteHeight = !Info.m_aNotification[0] ? 0.0f : 45.0f;
 	MainView.HSplitTop(20.0f+20.0f+2*Spacing+ NoteHeight, &MainView, 0);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, Config()->m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// game options
 	MainView.HSplitTop(20.0f, &Label, &MainView);
@@ -214,7 +214,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	CUIRect Label, Row;
 	MainView.HSplitBottom(80.0f, &MainView, 0);
 	MainView.HSplitTop(20.0f, 0, &MainView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, Config()->m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// player options
 	MainView.HSplitTop(ButtonHeight, &Label, &MainView);
@@ -235,8 +235,8 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ClipBgColor = vec4(0,0,0,0);
 	ScrollParams.m_ScrollbarBgColor = vec4(0,0,0,0);
-	ScrollParams.m_ScrollSpeed = 15;
-	if(s_ScrollRegion.m_ContentH > s_ScrollRegion.m_ClipRect.h) // scrollbar is shown
+	ScrollParams.m_ScrollUnit = ButtonHeight * 3; // 3 players per scroll
+	if(s_ScrollRegion.IsScrollbarShown())
 		Row.VSplitRight(ScrollParams.m_ScrollbarWidth, &Row, 0);
 
 	// headline
@@ -264,7 +264,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 	// scroll, ignore margins
 	MainView.Margin(-5.0f, &MainView);
-	BeginScrollRegion(&s_ScrollRegion, &MainView, &ScrollOffset, &ScrollParams);
+	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 	MainView.Margin(5.0f, &MainView);
 	MainView.y += ScrollOffset.y;
 
@@ -279,9 +279,13 @@ void CMenus::RenderPlayers(CUIRect MainView)
 				continue;
 
 			MainView.HSplitTop(ButtonHeight, &Row, &MainView);
-			ScrollRegionAddRect(&s_ScrollRegion, Row);
+			s_ScrollRegion.AddRect(Row);
 
-			if(Count++ % 2 == 0)
+			Count++;
+			if(s_ScrollRegion.IsRectClipped(Row))
+				continue;
+
+			if(Count % 2 == 1)
 				RenderTools()->DrawUIRect(&Row, vec4(1.0f, 1.0f, 1.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 			// player info
@@ -294,7 +298,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 			Row.VSplitLeft(2*Spacing, 0, &Row);
 			Row.VSplitLeft(NameWidth, &Label, &Row);
 			Label.y += 2.0f;
-			if(g_Config.m_ClShowUserId)
+			if(Config()->m_ClShowUserId)
 			{
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, Label.x, Label.y, ButtonHeight*ms_FontmodHeight*0.8f, TEXTFLAG_RENDER);
@@ -302,18 +306,18 @@ void CMenus::RenderPlayers(CUIRect MainView)
 				Label.VSplitLeft(ButtonHeight, 0, &Label);
 			}
 			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[i].m_aName : "");
+			str_format(aBuf, sizeof(aBuf), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[i].m_aName : "");
 			UI()->DoLabel(&Label, aBuf, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 			Row.VSplitLeft(Spacing, 0, &Row);
 			Row.VSplitLeft(ClanWidth, &Label, &Row);
 			Label.y += 2.0f;
-			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[i].m_aClan : "");
+			str_format(aBuf, sizeof(aBuf), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[i].m_aClan : "");
 			UI()->DoLabel(&Label, aBuf, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 
 			// ignore button
 			Row.VSplitRight(ButtonHeight/2, &Row, 0);
 			Row.VSplitRight(ButtonHeight, &Row, &Label);
-			if(g_Config.m_ClFilterchat == 2 || (g_Config.m_ClFilterchat == 1 && !m_pClient->m_aClients[i].m_Friend))
+			if(Config()->m_ClFilterchat == 2 || (Config()->m_ClFilterchat == 1 && !m_pClient->m_aClients[i].m_Friend))
 				DoButton_Toggle(&s_aPlayerIDs[i][0], 1, &Label, false);
 			else
 				if(DoButton_Toggle(&s_aPlayerIDs[i][0], m_pClient->m_aClients[i].m_ChatIgnore, &Label, true))
@@ -340,7 +344,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 			}
 		}
 	}
-	EndScrollRegion(&s_ScrollRegion);
+	s_ScrollRegion.End();
 }
 
 void CMenus::RenderServerInfo(CUIRect MainView)
@@ -355,7 +359,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	// render background
 	MainView.HSplitBottom(80.0f, &MainView, 0);
 	MainView.HSplitTop(20.0f, 0, &MainView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, Config()->m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	CUIRect ServerInfo, GameInfo, Motd, Label;
 
@@ -364,8 +368,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 
 	// serverinfo
 	MainView.HSplitBottom(250.0f, &ServerInfo, &Motd);
-	ServerInfo.VSplitMid(&ServerInfo, &GameInfo);
-	ServerInfo.VSplitRight(1.0f, &ServerInfo, 0);
+	ServerInfo.VSplitMid(&ServerInfo, &GameInfo, 2.0f);
 	RenderTools()->DrawUIRect(&ServerInfo, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 	ServerInfo.HSplitTop(ButtonHeight, &Label, &ServerInfo);
@@ -373,16 +376,16 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	UI()->DoLabel(&Label, Localize("Server info"), ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 	RenderTools()->DrawUIRect(&ServerInfo, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
 	ServerInfo.Margin(5.0f, &ServerInfo);
-	
+
 	ServerInfo.HSplitTop(2*ButtonHeight, &Label, &ServerInfo);
 	Label.y += 2.0f;
 	UI()->DoLabel(&Label, CurrentServerInfo.m_aName, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT, Label.w);
 
 	ServerInfo.HSplitTop(ButtonHeight, &Label, &ServerInfo);
 	Label.y += 2.0f;
-	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Address"), g_Config.m_UiServerAddress);
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Address"), CurrentServerInfo.m_aHostname);
 	UI()->DoLabel(&Label, aBuf, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
-	
+
 	ServerInfo.HSplitTop(ButtonHeight, &Label, &ServerInfo);
 	Label.y += 2.0f;
 	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Ping"), m_pClient->m_Snap.m_pLocalInfo->m_Latency);
@@ -397,8 +400,8 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	Label.y += 2.0f;
 	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Password"), CurrentServerInfo.m_Flags&IServerBrowser::FLAG_PASSWORD ? Localize("Yes", "With") : Localize("No", "Without/None"));
 	UI()->DoLabel(&Label, aBuf, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
-	
-	const bool IsFavorite = ServerBrowser()->IsFavorite(CurrentServerInfo.m_NetAddr);
+
+	const bool IsFavorite = CurrentServerInfo.m_Favorite;
 	ServerInfo.HSplitBottom(ButtonHeight, &ServerInfo, &Label);
 	static int s_AddFavButton = 0;
 	if(DoButton_CheckBox(&s_AddFavButton, Localize("Favorite"), IsFavorite, &Label))
@@ -421,7 +424,6 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	}
 
 	// gameinfo
-	GameInfo.VSplitLeft(1.0f, 0, &GameInfo);
 	RenderTools()->DrawUIRect(&GameInfo, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 	GameInfo.HSplitTop(ButtonHeight, &Label, &GameInfo);
@@ -485,7 +487,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 
 	static CScrollRegion s_ScrollRegion;
 	vec2 ScrollOffset(0, 0);
-	BeginScrollRegion(&s_ScrollRegion, &Motd, &ScrollOffset);
+	s_ScrollRegion.Begin(&Motd, &ScrollOffset);
 	Motd.y += ScrollOffset.y;
 
 	CTextCursor Cursor;
@@ -495,38 +497,42 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 
 	// define the MOTD text area and make it scrollable
 	CUIRect MotdTextArea;
-	Motd.HSplitTop(Cursor.m_Y-Motd.y+5.0f, &MotdTextArea, &Motd);
-	ScrollRegionAddRect(&s_ScrollRegion, MotdTextArea);
+	Motd.HSplitTop(Cursor.m_Y-Motd.y+ButtonHeight*ms_FontmodHeight*0.8f+5.0f, &MotdTextArea, &Motd);
+	s_ScrollRegion.AddRect(MotdTextArea);
 
-	EndScrollRegion(&s_ScrollRegion);
+	s_ScrollRegion.End();
 }
 
 bool CMenus::RenderServerControlServer(CUIRect MainView)
 {
-	bool doCallVote = false;
-	static int s_VoteList = 0;
-	static CListBoxState s_ListBoxState;
+	static CListBox s_ListBox;
 	CUIRect List = MainView;
-	UiDoListboxHeader(&s_ListBoxState, &List, Localize("Option"), 20.0f, 2.0f);
-	UiDoListboxStart(&s_ListBoxState, &s_VoteList, 20.0f, 0, m_pClient->m_pVoting->m_NumVoteOptions, 1, m_CallvoteSelectedOption, 0, true);
+	s_ListBox.DoHeader(&List, Localize("Option"), GetListHeaderHeight());
+	s_ListBox.DoStart(20.0f, m_pClient->m_pVoting->m_NumVoteOptions, 1, 3, m_CallvoteSelectedOption, 0, true);
 
 	for(CVoteOptionClient *pOption = m_pClient->m_pVoting->m_pFirst; pOption; pOption = pOption->m_pNext)
 	{
-		if(m_aFilterString[0] && !str_find_nocase(pOption->m_aDescription, m_aFilterString))
+		if(m_aFilterString[0] && !pOption->m_IsSubheader && !str_find_nocase(pOption->m_aDescription, m_aFilterString))
 			continue; // no match found
 
-		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, pOption);
+		if(!pOption->m_aDescription[0])
+			continue; // depth resets
+
+		CListboxItem Item = pOption->m_IsSubheader ? s_ListBox.DoSubheader() : s_ListBox.DoNextItem(pOption);
 
 		if(Item.m_Visible)
-		{			
+		{
 			Item.m_Rect.VMargin(5.0f, &Item.m_Rect);
 			Item.m_Rect.y += 2.0f;
+			for(int i = pOption->m_IsSubheader ? 1 : 0; i < pOption->m_Depth; i++)
+				Item.m_Rect.VSplitLeft(10.0f, 0, &Item.m_Rect);
+
 			UI()->DoLabel(&Item.m_Rect, pOption->m_aDescription, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 		}
 	}
 
-	m_CallvoteSelectedOption = UiDoListboxEnd(&s_ListBoxState, &doCallVote);
-	return doCallVote;
+	m_CallvoteSelectedOption = s_ListBox.DoEnd();
+	return s_ListBox.WasItemActivated();
 }
 
 void CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
@@ -552,15 +558,15 @@ void CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 	const float Spacing = 2.0f;
 	const float NameWidth = 250.0f;
 	const float ClanWidth = 250.0f;
-	static int s_VoteList = 0;
-	static CListBoxState s_ListBoxState;
+
+	static CListBox s_ListBox;
 	CUIRect List = MainView;
-	UiDoListboxHeader(&s_ListBoxState, &List, Localize("Player"), 20.0f, 2.0f);
-	UiDoListboxStart(&s_ListBoxState, &s_VoteList, 20.0f, 0, NumOptions, 1, Selected, 0, true);
+	s_ListBox.DoHeader(&List, Localize("Player"), GetListHeaderHeight());
+	s_ListBox.DoStart(20.0f, NumOptions, 1, 3, Selected, 0, true);
 
 	for(int i = 0; i < NumOptions; i++)
 	{
-		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, &aPlayerIDs[i]);
+		CListboxItem Item = s_ListBox.DoNextItem(&aPlayerIDs[i]);
 
 		if(Item.m_Visible)
 		{
@@ -575,7 +581,7 @@ void CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 			RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(Label.x + Label.h / 2, Label.y + Label.h / 2));
 
 			Row.VSplitLeft(2*Spacing, 0, &Row);
-			if(g_Config.m_ClShowUserId)
+			if(Config()->m_ClShowUserId)
 			{
 				Row.VSplitLeft(Row.h, &Label, &Row);
 				Label.y += 2.0f;
@@ -588,17 +594,17 @@ void CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 			Row.VSplitLeft(NameWidth, &Label, &Row);
 			Label.y += 2.0f;
 			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[aPlayerIDs[i]].m_aName : "");
+			str_format(aBuf, sizeof(aBuf), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[aPlayerIDs[i]].m_aName : "");
 			UI()->DoLabel(&Label, aBuf, Label.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 			Row.VSplitLeft(Spacing, 0, &Row);
 			Row.VSplitLeft(ClanWidth, &Label, &Row);
 			Label.y += 2.0f;
-			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[aPlayerIDs[i]].m_aClan : "");
+			str_format(aBuf, sizeof(aBuf), "%s", Config()->m_ClShowsocial ? m_pClient->m_aClients[aPlayerIDs[i]].m_aClan : "");
 			UI()->DoLabel(&Label, aBuf, Label.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 		}
 	}
 
-	Selected = UiDoListboxEnd(&s_ListBoxState, 0);
+	Selected = s_ListBox.DoEnd();
 	m_CallvoteSelectedPlayer = Selected != -1 ? aPlayerIDs[Selected] : -1;
 }
 
@@ -610,8 +616,11 @@ void CMenus::HandleCallvote(int Page, bool Force)
 		int RealIndex = 0, FilteredIndex = 0;
 		for(CVoteOptionClient *pOption = m_pClient->m_pVoting->m_pFirst; pOption; pOption = pOption->m_pNext, RealIndex++)
 		{
-			if(m_aFilterString[0] && !str_find_nocase(pOption->m_aDescription, m_aFilterString))
+			if(m_aFilterString[0] && !pOption->m_IsSubheader && !str_find_nocase(pOption->m_aDescription, m_aFilterString))
 				continue; // no match found
+
+			if(!pOption->m_aDescription[0])
+				continue; // depth reset
 
 			if(FilteredIndex == m_CallvoteSelectedOption)
 				break;
@@ -665,7 +674,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		// only print notice
 		CUIRect Bar;
 		MainView.HSplitTop(45.0f, &Bar, &MainView);
-		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
+		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+Config()->m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 		Bar.HMargin(15.0f, &Bar);
 		UI()->DoLabel(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
@@ -710,7 +719,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	{
 		MainView.HSplitTop(20.0f+45.0f, &MainView, 0);
 	}
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, Config()->m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	if(pNotification && !Authed)
 	{
@@ -727,12 +736,12 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	// render background
 	MainView.HSplitBottom(90.0f+2*20.0f, &MainView, &Extended);
 	RenderTools()->DrawUIRect(&Extended, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
-	
+
 	bool doCallVote = false;
 	// render page
 	if(s_ControlPage == 0)
 		// double click triggers vote if not spectating
-		doCallVote = RenderServerControlServer(MainView) && m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team != TEAM_SPECTATORS; 
+		doCallVote = RenderServerControlServer(MainView) && m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team != TEAM_SPECTATORS;
 	else if(s_ControlPage == 1)
 		RenderServerControlKick(MainView, false);
 	else if(s_ControlPage == 2)
@@ -780,16 +789,15 @@ void CMenus::RenderServerControl(CUIRect MainView)
 			// clear button
 			{
 				static CButtonContainer s_ClearButton;
-				float Fade = ButtonFade(&s_ClearButton, 0.6f);
-				RenderTools()->DrawUIRect(&ClearButton, vec4(1.0f, 1.0f, 1.0f, 0.33f+(Fade/0.6f)*0.165f), CUI::CORNER_R, 3.0f);
+				RenderTools()->DrawUIRect(&ClearButton, vec4(1.0f, 1.0f, 1.0f, 0.33f+s_ClearButton.GetFade()*0.165f), CUI::CORNER_R, 3.0f);
 				Label = ClearButton;
 				Label.y += 2.0f;
 				UI()->DoLabel(&Label, "x", Label.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
-				if(UI()->DoButtonLogic(s_ClearButton.GetID(), "x", 0, &ClearButton))
+				if(UI()->DoButtonLogic(s_ClearButton.GetID(), &ClearButton))
 					m_aCallvoteReason[0] = 0;
 			}
 		}
- 
+
 		if(pNotification == 0)
 		{
 			// call vote
@@ -865,4 +873,3 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		}
 	}
 }
-

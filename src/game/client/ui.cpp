@@ -5,11 +5,19 @@
 #include <engine/shared/config.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
+#include <engine/keys.h>
+#include <engine/input.h>
 #include "ui.h"
 
 /********************************************************
  UI
 *********************************************************/
+
+const vec4 CUI::ms_DefaultTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+const vec4 CUI::ms_DefaultTextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
+const vec4 CUI::ms_HighlightTextColor(0.0f, 0.0f, 0.0f, 1.0f);
+const vec4 CUI::ms_HighlightTextOutlineColor(1.0f, 1.0f, 1.0f, 0.25f);
+const vec4 CUI::ms_TransparentTextColor(1.0f, 1.0f, 1.0f, 0.5f);
 
 CUI::CUI()
 {
@@ -17,7 +25,6 @@ CUI::CUI()
 	m_pActiveItem = 0;
 	m_pLastActiveItem = 0;
 	m_pBecommingHotItem = 0;
-	m_Clipped = false;
 
 	m_MouseX = 0;
 	m_MouseY = 0;
@@ -25,58 +32,66 @@ CUI::CUI()
 	m_MouseWorldY = 0;
 	m_MouseButtons = 0;
 	m_LastMouseButtons = 0;
+	m_Enabled = true;
 
 	m_Screen.x = 0;
 	m_Screen.y = 0;
-	m_Screen.w = 848.0f;
-	m_Screen.h = 480.0f;
+
+	m_NumClips = 0;
 }
 
-int CUI::Update(float Mx, float My, float Mwx, float Mwy, int Buttons)
+void CUI::Update(float MouseX, float MouseY, float MouseWorldX, float MouseWorldY)
 {
-	m_MouseX = Mx;
-	m_MouseY = My;
-	m_MouseWorldX = Mwx;
-	m_MouseWorldY = Mwy;
+	unsigned MouseButtons = 0;
+	if(Enabled())
+	{
+		if(Input()->KeyIsPressed(KEY_MOUSE_1)) MouseButtons |= 1;
+		if(Input()->KeyIsPressed(KEY_MOUSE_2)) MouseButtons |= 2;
+		if(Input()->KeyIsPressed(KEY_MOUSE_3)) MouseButtons |= 4;
+	}
+
+	m_MouseX = MouseX;
+	m_MouseY = MouseY;
+	m_MouseWorldX = MouseWorldX;
+	m_MouseWorldY = MouseWorldY;
 	m_LastMouseButtons = m_MouseButtons;
-	m_MouseButtons = Buttons;
+	m_MouseButtons = MouseButtons;
 	m_pHotItem = m_pBecommingHotItem;
 	if(m_pActiveItem)
 		m_pHotItem = m_pActiveItem;
 	m_pBecommingHotItem = 0;
-	return 0;
 }
 
-int CUI::MouseInside(const CUIRect *r) const
+bool CUI::KeyPress(int Key) const
 {
-	if(m_MouseX >= r->x && m_MouseX < r->x+r->w && m_MouseY >= r->y && m_MouseY < r->y+r->h)
-		return 1;
-	return 0;
+	return Enabled() && Input()->KeyPress(Key);
 }
 
-bool CUI::MouseInsideClip() const
+bool CUI::KeyIsPressed(int Key) const
 {
-	return !m_Clipped || MouseInside(&m_ClipRect) == 1;
+	return Enabled() && Input()->KeyIsPressed(Key);
 }
 
-void CUI::ConvertMouseMove(float *x, float *y) const
+void CUI::ConvertCursorMove(float *pX, float *pY, int CursorType) const
 {
-	float Fac = (float)(g_Config.m_UiMousesens)/g_Config.m_InpMousesens;
-	*x = *x*Fac;
-	*y = *y*Fac;
+	float Factor = 1.0f;
+	switch(CursorType)
+	{
+		case IInput::CURSOR_MOUSE:
+			Factor = Config()->m_UiMousesens/100.0f;
+			break;
+		case IInput::CURSOR_JOYSTICK:
+			Factor = Config()->m_UiJoystickSens/100.0f;
+			break;
+	}
+	*pX *= Factor;
+	*pY *= Factor;
 }
 
-CUIRect *CUI::Screen()
+const CUIRect *CUI::Screen()
 {
-	float Aspect = Graphics()->ScreenAspect();
-	float w, h;
-
-	h = 600;
-	w = Aspect*h;
-
-	m_Screen.w = w;
-	m_Screen.h = h;
-
+	m_Screen.h = 600;
+	m_Screen.w = Graphics()->ScreenAspect()*m_Screen.h;
 	return &m_Screen;
 }
 
@@ -85,40 +100,75 @@ float CUI::PixelSize()
 	return Screen()->w/Graphics()->ScreenWidth();
 }
 
-void CUI::ClipEnable(const CUIRect *r)
+void CUI::ClipEnable(const CUIRect *pRect)
 {
-	m_ClipRect = *r;
-	m_Clipped = true;
-	float XScale = Graphics()->ScreenWidth()/Screen()->w;
-	float YScale = Graphics()->ScreenHeight()/Screen()->h;
-	Graphics()->ClipEnable((int)(r->x*XScale), (int)(r->y*YScale), (int)(r->w*XScale), (int)(r->h*YScale));
+	if(IsClipped())
+	{
+		dbg_assert(m_NumClips < MAX_CLIP_NESTING_DEPTH, "max clip nesting depth exceeded");
+		const CUIRect *pOldRect = ClipArea();
+		CUIRect Intersection;
+		Intersection.x = max(pRect->x, pOldRect->x);
+		Intersection.y = max(pRect->y, pOldRect->y);
+		Intersection.w = min(pRect->x+pRect->w, pOldRect->x+pOldRect->w) - pRect->x;
+		Intersection.h = min(pRect->y+pRect->h, pOldRect->y+pOldRect->h) - pRect->y;
+		m_aClips[m_NumClips] = Intersection;
+	}
+	else
+	{
+		m_aClips[m_NumClips] = *pRect;
+	}
+	m_NumClips++;
+	UpdateClipping();
 }
 
 void CUI::ClipDisable()
 {
-	Graphics()->ClipDisable();
-	m_Clipped = false;
+	dbg_assert(m_NumClips > 0, "no clip region");
+	m_NumClips--;
+	UpdateClipping();
 }
 
-void CUIRect::HSplitMid(CUIRect *pTop, CUIRect *pBottom) const
+const CUIRect *CUI::ClipArea() const
+{
+	dbg_assert(m_NumClips > 0, "no clip region");
+	return &m_aClips[m_NumClips - 1];
+}
+
+void CUI::UpdateClipping()
+{
+	if(IsClipped())
+	{
+		const CUIRect *pRect = ClipArea();
+		const float XScale = Graphics()->ScreenWidth()/Screen()->w;
+		const float YScale = Graphics()->ScreenHeight()/Screen()->h;
+		Graphics()->ClipEnable((int)(pRect->x*XScale), (int)(pRect->y*YScale), (int)(pRect->w*XScale), (int)(pRect->h*YScale));
+	}
+	else
+	{
+		Graphics()->ClipDisable();
+	}
+}
+
+void CUIRect::HSplitMid(CUIRect *pTop, CUIRect *pBottom, float Spacing) const
 {
 	CUIRect r = *this;
-	float Cut = r.h/2;
+	const float Cut = r.h/2;
+	const float HalfSpacing = Spacing/2;
 
 	if(pTop)
 	{
 		pTop->x = r.x;
 		pTop->y = r.y;
 		pTop->w = r.w;
-		pTop->h = Cut;
+		pTop->h = Cut - HalfSpacing;
 	}
 
 	if(pBottom)
 	{
 		pBottom->x = r.x;
-		pBottom->y = r.y + Cut;
+		pBottom->y = r.y + Cut + HalfSpacing;
 		pBottom->w = r.w;
-		pBottom->h = r.h - Cut;
+		pBottom->h = r.h - Cut - HalfSpacing;
 	}
 }
 
@@ -165,24 +215,25 @@ void CUIRect::HSplitBottom(float Cut, CUIRect *pTop, CUIRect *pBottom) const
 }
 
 
-void CUIRect::VSplitMid(CUIRect *pLeft, CUIRect *pRight) const
+void CUIRect::VSplitMid(CUIRect *pLeft, CUIRect *pRight, float Spacing) const
 {
 	CUIRect r = *this;
-	float Cut = r.w/2;
+	const float Cut = r.w/2;
+	const float HalfSpacing = Spacing/2;
 
 	if (pLeft)
 	{
 		pLeft->x = r.x;
 		pLeft->y = r.y;
-		pLeft->w = Cut;
+		pLeft->w = Cut - HalfSpacing;
 		pLeft->h = r.h;
 	}
 
 	if (pRight)
 	{
-		pRight->x = r.x + Cut;
+		pRight->x = r.x + Cut + HalfSpacing;
 		pRight->y = r.y;
-		pRight->w = r.w - Cut;
+		pRight->w = r.w - Cut - HalfSpacing;
 		pRight->h = r.h;
 	}
 }
@@ -259,49 +310,48 @@ void CUIRect::HMargin(float Cut, CUIRect *pOtherRect) const
 	pOtherRect->h = r.h - 2*Cut;
 }
 
-int CUI::DoButtonLogic(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
+bool CUIRect::Inside(float x, float y) const
+{
+	return x >= this->x
+		&& x < this->x + this->w
+		&& y >= this->y
+		&& y < this->y + this->h;
+}
+
+bool CUI::DoButtonLogic(const void *pID, const CUIRect *pRect, int Button)
 {
 	// logic
-	int ReturnValue = 0;
-	int Inside = MouseInside(pRect);
-	if(m_Clipped)
-		Inside &= MouseInside(&m_ClipRect);
-	static int ButtonUsed = 0;
+	bool Clicked = false;
+	static int s_LastButton = -1;
+	const bool Hovered = MouseHovered(pRect);
 
 	if(CheckActiveItem(pID))
 	{
-		if(!MouseButton(ButtonUsed))
+		if(s_LastButton == Button && !MouseButton(s_LastButton))
 		{
-			if(Inside && Checked >= 0)
-				ReturnValue = 1+ButtonUsed;
+			if(Hovered)
+				Clicked = true;
 			SetActiveItem(0);
+			s_LastButton = -1;
 		}
 	}
 	else if(HotItem() == pID)
 	{
-		if(MouseButton(0))
+		if(MouseButton(Button))
 		{
 			SetActiveItem(pID);
-			ButtonUsed = 0;
-		}
-
-		if(MouseButton(1))
-		{
-			SetActiveItem(pID);
-			ButtonUsed = 1;
+			s_LastButton = Button;
 		}
 	}
 
-	if(Inside)
+	if(Hovered && !MouseButton(Button))
 		SetHotItem(pID);
 
-	return ReturnValue;
+	return Clicked;
 }
 
-int CUI::DoPickerLogic(const void *pID, const CUIRect *pRect, float *pX, float *pY)
+bool CUI::DoPickerLogic(const void *pID, const CUIRect *pRect, float *pX, float *pY)
 {
-	int Inside = MouseInside(pRect);
-
 	if(CheckActiveItem(pID))
 	{
 		if(!MouseButton(0))
@@ -313,90 +363,58 @@ int CUI::DoPickerLogic(const void *pID, const CUIRect *pRect, float *pX, float *
 			SetActiveItem(pID);
 	}
 
-	if(Inside)
+	if(MouseHovered(pRect))
 		SetHotItem(pID);
 
 	if(!CheckActiveItem(pID))
-		return 0;
+		return false;
 
 	if(pX)
 		*pX = clamp(m_MouseX - pRect->x, 0.0f, pRect->w);
 	if(pY)
 		*pY = clamp(m_MouseY - pRect->y, 0.0f, pRect->h);
 
-	return 1;
+	return true;
 }
 
-int CUI::DoColorSelectionLogic(const CUIRect *pRect, const CUIRect *pButton) // it's counter logic! FIXME
-{
-	if(MouseButtonClicked(0) && MouseInside(pRect) && !MouseInside(pButton))
-		return 1;
-	else
-		return 0;
-}
-
-/*
-int CUI::DoButton(const void *id, const char *text, int checked, const CUIRect *r, ui_draw_button_func draw_func, const void *extra)
-{
-	// logic
-	int ret = 0;
-	int inside = ui_MouseInside(r);
-	static int button_used = 0;
-
-	if(ui_ActiveItem() == id)
-	{
-		if(!ui_MouseButton(button_used))
-		{
-			if(inside && checked >= 0)
-				ret = 1+button_used;
-			ui_SetActiveItem(0);
-		}
-	}
-	else if(ui_HotItem() == id)
-	{
-		if(ui_MouseButton(0))
-		{
-			ui_SetActiveItem(id);
-			button_used = 0;
-		}
-
-		if(ui_MouseButton(1))
-		{
-			ui_SetActiveItem(id);
-			button_used = 1;
-		}
-	}
-
-	if(inside)
-		ui_SetHotItem(id);
-
-	if(draw_func)
-		draw_func(id, text, checked, r, extra);
-	return ret;
-}*/
-
-void CUI::DoLabel(const CUIRect *r, const char *pText, float Size, EAlignment Align, float LineWidth, bool MultiLine)
+void CUI::DoLabel(const CUIRect *pRect, const char *pText, float FontSize, EAlignment Align, float LineWidth, bool MultiLine)
 {
 	// TODO: FIX ME!!!!
 	//Graphics()->BlendNormal();
+
+	float TextX = pRect->x;
 	switch(Align)
 	{
 	case ALIGN_CENTER:
-	{
-		float tw = TextRender()->TextWidth(0, Size, pText, -1, LineWidth);
-		TextRender()->Text(0, r->x + r->w/2-tw/2, r->y - Size/10, Size, pText, LineWidth, MultiLine);
+		TextX += pRect->w/2.0f - TextRender()->TextWidth(0, FontSize, pText, -1, LineWidth)/2.0f;
 		break;
-	}
 	case ALIGN_LEFT:
-	{
-		TextRender()->Text(0, r->x, r->y - Size/10, Size, pText, LineWidth, MultiLine);
+		// default is left aligned
 		break;
-	}
 	case ALIGN_RIGHT:
-	{
-		float tw = TextRender()->TextWidth(0, Size, pText, -1, LineWidth);
-		TextRender()->Text(0, r->x + r->w-tw, r->y - Size/10, Size, pText, LineWidth, MultiLine);
+		TextX += pRect->w - TextRender()->TextWidth(0, FontSize, pText, -1, LineWidth);
 		break;
 	}
+
+	TextRender()->Text(0, TextX, pRect->y - FontSize/10.0f, FontSize, pText, LineWidth, MultiLine);
+}
+
+void CUI::DoLabelHighlighted(const CUIRect *pRect, const char *pText, const char *pHighlighted, float FontSize, const vec4 &TextColor, const vec4 &HighlightColor)
+{
+	CTextCursor Cursor;
+	TextRender()->SetCursor(&Cursor, pRect->x, pRect->y, FontSize, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
+	Cursor.m_LineWidth = pRect->w;
+
+	TextRender()->TextColor(TextColor);
+	const char *pMatch = pHighlighted && pHighlighted[0] ? str_find_nocase(pText, pHighlighted) : 0;
+	if(pMatch)
+	{
+		TextRender()->TextEx(&Cursor, pText, (int)(pMatch - pText));
+		TextRender()->TextColor(HighlightColor);
+		TextRender()->TextEx(&Cursor, pMatch, str_length(pHighlighted));
+		TextRender()->TextColor(TextColor);
+		TextRender()->TextEx(&Cursor, pMatch + str_length(pHighlighted), -1);
 	}
+	else
+		TextRender()->TextEx(&Cursor, pText, -1);
 }

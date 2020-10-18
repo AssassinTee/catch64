@@ -81,7 +81,7 @@ void CVoting::RemovevoteOption(int OptionID)
 void CVoting::AddvoteOption(const char *pDescription, const char *pCommand)
 {
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "add_vote \"%s\" %s", pDescription, pCommand);
+	str_format(aBuf, sizeof(aBuf), "add_vote \"%s\" \"%s\"", pDescription, pCommand);
 	Client()->Rcon(aBuf);
 }
 
@@ -120,7 +120,20 @@ void CVoting::AddOption(const char *pDescription)
 	if(!m_pFirst)
 		m_pFirst = pOption;
 
+	int Depth = 0;
+	for(;*pDescription == '#'; pDescription++, Depth++);
+	pOption->m_Depth = Depth ? Depth : pOption->m_pPrev ? pOption->m_pPrev->m_Depth : 0;
+
+	pOption->m_IsSubheader = Depth;
+
+	if(!*pDescription)
+		pOption->m_Depth = 0;
+
 	str_copy(pOption->m_aDescription, pDescription, sizeof(pOption->m_aDescription));
+
+	if(Config()->m_Debug)
+		dbg_msg("voting", "added option '%s' with depth='%d'", pDescription, pOption->m_Depth);
+
 	++m_NumVoteOptions;
 }
 
@@ -162,7 +175,7 @@ void CVoting::OnStateChange(int NewState, int OldState)
 
 void CVoting::OnConsoleInit()
 {
-	Console()->Register("vote", "r", CFGFLAG_CLIENT, ConVote, this, "Vote yes/no");
+	Console()->Register("vote", "r['yes'|'no']", CFGFLAG_CLIENT, ConVote, this, "Vote yes/no");
 }
 
 void CVoting::OnMessage(int MsgType, void *pRawMsg)
@@ -180,32 +193,32 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 			if(pMsg->m_ClientID != -1)
 			{
 				char aLabel[64];
-				CGameClient::GetPlayerLabel(aLabel, sizeof(aLabel), pMsg->m_ClientID, m_pClient->m_aClients[pMsg->m_ClientID].m_aName);
+				m_pClient->GetPlayerLabel(aLabel, sizeof(aLabel), pMsg->m_ClientID, m_pClient->m_aClients[pMsg->m_ClientID].m_aName);
 				switch(pMsg->m_Type)
 				{
 				case VOTE_START_OP:
 					str_format(aBuf, sizeof(aBuf), Localize("'%s' called vote to change server option '%s' (%s)"), aLabel, pMsg->m_pDescription, pMsg->m_pReason);
 					str_copy(m_aDescription, pMsg->m_pDescription, sizeof(m_aDescription));
-					m_pClient->m_pChat->AddLine(-1, 0, aBuf);
+					m_pClient->m_pChat->AddLine(aBuf);
 					break;
 				case VOTE_START_KICK:
 					{
 						char aName[4];
-						if(!g_Config.m_ClShowsocial)
+						if(!Config()->m_ClShowsocial)
 							str_copy(aName, pMsg->m_pDescription, sizeof(aName));
-						str_format(aBuf, sizeof(aBuf), Localize("'%s' called for vote to kick '%s' (%s)"), aLabel, g_Config.m_ClShowsocial ? pMsg->m_pDescription : aName, pMsg->m_pReason);
-						str_format(m_aDescription, sizeof(m_aDescription), "Kick '%s'", g_Config.m_ClShowsocial ? pMsg->m_pDescription : aName);
-						m_pClient->m_pChat->AddLine(-1, 0, aBuf);
+						str_format(aBuf, sizeof(aBuf), Localize("'%s' called for vote to kick '%s' (%s)"), aLabel, Config()->m_ClShowsocial ? pMsg->m_pDescription : aName, pMsg->m_pReason);
+						str_format(m_aDescription, sizeof(m_aDescription), "Kick '%s'", Config()->m_ClShowsocial ? pMsg->m_pDescription : aName);
+						m_pClient->m_pChat->AddLine(aBuf);
 						break;
 					}
 				case VOTE_START_SPEC:
 					{
 						char aName[4];
-						if(!g_Config.m_ClShowsocial)
+						if(!Config()->m_ClShowsocial)
 							str_copy(aName, pMsg->m_pDescription, sizeof(aName));
-						str_format(aBuf, sizeof(aBuf), Localize("'%s' called for vote to move '%s' to spectators (%s)"), aLabel, g_Config.m_ClShowsocial ? pMsg->m_pDescription : aName, pMsg->m_pReason);
-						str_format(m_aDescription, sizeof(m_aDescription), "Move '%s' to spectators", g_Config.m_ClShowsocial ? pMsg->m_pDescription : aName);
-						m_pClient->m_pChat->AddLine(-1, 0, aBuf);
+						str_format(aBuf, sizeof(aBuf), Localize("'%s' called for vote to move '%s' to spectators (%s)"), aLabel, Config()->m_ClShowsocial ? pMsg->m_pDescription : aName, pMsg->m_pReason);
+						str_format(m_aDescription, sizeof(m_aDescription), "Move '%s' to spectators", Config()->m_ClShowsocial ? pMsg->m_pDescription : aName);
+						m_pClient->m_pChat->AddLine(aBuf);
 					}
 				}
 				if(pMsg->m_ClientID == m_pClient->m_LocalClientID)
@@ -218,29 +231,23 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 			{
 			case VOTE_START_OP:
 				str_format(aBuf, sizeof(aBuf), Localize("Admin forced server option '%s' (%s)"), pMsg->m_pDescription, pMsg->m_pReason);
-				m_pClient->m_pChat->AddLine(-1, 0, aBuf);
+				m_pClient->m_pChat->AddLine(aBuf);
 				break;
 			case VOTE_START_SPEC:
 				str_format(aBuf, sizeof(aBuf), Localize("Admin moved '%s' to spectator (%s)"), pMsg->m_pDescription, pMsg->m_pReason);
-				m_pClient->m_pChat->AddLine(-1, 0, aBuf);
+				m_pClient->m_pChat->AddLine(aBuf);
 				break;
 			case VOTE_END_ABORT:
 				OnReset();
-				m_pClient->m_pChat->AddLine(-1, 0, Localize("Vote aborted"));
+				m_pClient->m_pChat->AddLine(Localize("Vote aborted"));
 				break;
 			case VOTE_END_PASS:
 				OnReset();
-				if(pMsg->m_ClientID == -1)
-					m_pClient->m_pChat->AddLine(-1, 0, Localize("Admin forced vote yes"));
-				else
-					m_pClient->m_pChat->AddLine(-1, 0, Localize("Vote passed"));
+				m_pClient->m_pChat->AddLine(pMsg->m_ClientID == -1 ? Localize("Admin forced vote yes") : Localize("Vote passed"));
 				break;
 			case  VOTE_END_FAIL:
 				OnReset();
-				if(pMsg->m_ClientID == -1)
-					m_pClient->m_pChat->AddLine(-1, 0, Localize("Admin forced vote no"));
-				else
-					m_pClient->m_pChat->AddLine(-1, 0, Localize("Vote failed"));
+				m_pClient->m_pChat->AddLine(pMsg->m_ClientID == -1 ? Localize("Admin forced vote no") : Localize("Vote failed"));
 				m_CallvoteBlockTick = BlockTick;
 			}
 		}
@@ -356,5 +363,3 @@ void CVoting::RenderBars(CUIRect Bars, bool Text)
 		}
 	}
 }
-
-

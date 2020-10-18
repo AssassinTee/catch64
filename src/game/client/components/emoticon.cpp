@@ -29,7 +29,7 @@ void CEmoticon::ConEmote(IConsole::IResult *pResult, void *pUserData)
 void CEmoticon::OnConsoleInit()
 {
 	Console()->Register("+emote", "", CFGFLAG_CLIENT, ConKeyEmoticon, this, "Open emote selector");
-	Console()->Register("emote", "i", CFGFLAG_CLIENT, ConEmote, this, "Use emote");
+	Console()->Register("emote", "i[emote-id]", CFGFLAG_CLIENT, ConEmote, this, "Use emote");
 }
 
 void CEmoticon::OnReset()
@@ -48,13 +48,13 @@ void CEmoticon::OnMessage(int MsgType, void *pRawMsg)
 {
 }
 
-bool CEmoticon::OnMouseMove(float x, float y)
+bool CEmoticon::OnCursorMove(float x, float y, int CursorType)
 {
 	if(!m_Active)
 		return false;
 
-	UI()->ConvertMouseMove(&x, &y);
-	m_SelectorMouse += vec2(x,y);
+	UI()->ConvertCursorMove(&x, &y, CursorType);
+	m_SelectorMouse += vec2(x, y);
 	return true;
 }
 
@@ -93,6 +93,13 @@ void CEmoticon::DrawCircle(float x, float y, float r, int Segments)
 
 void CEmoticon::OnRender()
 {
+	if(Client()->State() < IClient::STATE_ONLINE)
+	{
+		m_Active = false;
+		m_WasActive = false;
+		return;
+	}
+
 	if(!m_Active)
 	{
 		if(m_WasActive && m_SelectedEmote != -1)

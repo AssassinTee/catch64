@@ -9,13 +9,14 @@
 
 #include "system.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #if defined(CONF_FAMILY_UNIX)
 	#include <sys/time.h>
 	#include <unistd.h>
 
 	/* unix net includes */
-	#include <sys/stat.h>
-	#include <sys/types.h>
 	#include <sys/socket.h>
 	#include <sys/ioctl.h>
 	#include <errno.h>
@@ -368,6 +369,49 @@ unsigned io_read(IOHANDLE io, void *buffer, unsigned size)
 	return fread(buffer, 1, size, (FILE*)io);
 }
 
+void io_read_all(IOHANDLE io, void **result, unsigned *result_len)
+{
+	unsigned char *buffer = malloc(1024);
+	unsigned len = 0;
+	unsigned cap = 1024;
+	unsigned read;
+
+	*result = 0;
+	*result_len = 0;
+
+	while((read = io_read(io, buffer + len, cap - len)) != 0)
+	{
+		len += read;
+		if(len == cap)
+		{
+			cap *= 2;
+			buffer = realloc(buffer, cap);
+		}
+	}
+	if(len == cap)
+	{
+		buffer = realloc(buffer, cap + 1);
+	}
+	// ensure null termination
+	buffer[len] = 0;
+	*result = buffer;
+	*result_len = len;
+}
+
+char *io_read_all_str(IOHANDLE io)
+{
+	void *buffer;
+	unsigned len;
+
+	io_read_all(io, &buffer, &len);
+	if(mem_has_null(buffer, len))
+	{
+		free(buffer);
+		return 0;
+	}
+	return buffer;
+}
+
 unsigned io_unread_byte(IOHANDLE io, unsigned char byte)
 {
 	return ungetc(byte, (FILE*)io) == EOF;
@@ -718,9 +762,11 @@ static void sockaddr_to_netaddr(const struct sockaddr *src, NETADDR *dst)
 	}
 }
 
-int net_addr_comp(const NETADDR *a, const NETADDR *b)
+int net_addr_comp(const NETADDR *a, const NETADDR *b, int check_port)
 {
-	return mem_comp(a, b, sizeof(NETADDR));
+	if(a->type == b->type && mem_comp(a->ip, b->ip, a->type == NETTYPE_IPV4 ? NETADDR_SIZE_IPV4 : NETADDR_SIZE_IPV6) == 0 && (!check_port || a->port == b->port))
+		return 0;
+	return -1;
 }
 
 void net_addr_str(const NETADDR *addr, char *string, int max_length, int add_port)
@@ -1411,6 +1457,11 @@ int net_would_block()
 #endif
 }
 
+void net_invalidate_socket(NETSOCKET *socket)
+{
+	*socket = invalid_socket;
+}
+
 int net_init()
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -1422,6 +1473,22 @@ int net_init()
 
 	return 0;
 }
+
+#if defined (CONF_FAMILY_WINDOWS)
+static inline time_t filetime_to_unixtime(LPFILETIME filetime)
+{
+	time_t t;
+	ULARGE_INTEGER li;
+	li.LowPart = filetime->dwLowDateTime;
+	li.HighPart = filetime->dwHighDateTime;
+
+	li.QuadPart /= 10000000; // 100ns to 1s
+	li.QuadPart -= 11644473600LL; // Windows epoch is in the past
+
+	t = li.QuadPart;
+	return t == li.QuadPart ? t : (time_t)-1;
+}
+#endif
 
 void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user)
 {
@@ -1467,6 +1534,74 @@ void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user)
 	{
 		str_copy(buffer+length, entry->d_name, (int)sizeof(buffer)-length);
 		if(cb(entry->d_name, fs_is_dir(buffer), type, user))
+			break;
+	}
+
+	/* close the directory and return */
+	closedir(d);
+	return;
+#endif
+}
+
+void fs_listdir_fileinfo(const char* dir, FS_LISTDIR_CALLBACK_FILEINFO cb, int type, void* user)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	WIN32_FIND_DATA finddata;
+	HANDLE handle;
+	char buffer[1024*2];
+	int length;
+	str_format(buffer, sizeof(buffer), "%s/*", dir);
+
+	handle = FindFirstFileA(buffer, &finddata);
+
+	if (handle == INVALID_HANDLE_VALUE)
+		return;
+
+	str_format(buffer, sizeof(buffer), "%s/", dir);
+	length = str_length(buffer);
+
+	/* add all the entries */
+	do
+	{
+		str_copy(buffer+length, finddata.cFileName, (int)sizeof(buffer)-length);
+
+		CFsFileInfo info;
+		info.m_pName = finddata.cFileName;
+		info.m_TimeCreated = filetime_to_unixtime(&finddata.ftCreationTime);
+		info.m_TimeModified = filetime_to_unixtime(&finddata.ftLastWriteTime);
+
+		if(cb(&info, fs_is_dir(buffer), type, user))
+			break;
+	}
+	while (FindNextFileA(handle, &finddata));
+
+	FindClose(handle);
+	return;
+#else
+	struct dirent *entry;
+	time_t created = -1, modified = -1;
+	char buffer[1024*2];
+	int length;
+	DIR *d = opendir(dir);
+
+	if(!d)
+		return;
+
+	str_format(buffer, sizeof(buffer), "%s/", dir);
+	length = str_length(buffer);
+
+	while((entry = readdir(d)) != NULL)
+	{
+		CFsFileInfo info;
+
+		str_copy(buffer+length, entry->d_name, (int)sizeof(buffer)-length);
+		fs_file_time(buffer, &created, &modified);
+
+		info.m_pName = entry->d_name;
+		info.m_TimeCreated = created;
+		info.m_TimeModified = modified;
+
+		if(cb(&info, fs_is_dir(buffer), type, user))
 			break;
 	}
 
@@ -1599,6 +1734,15 @@ int fs_is_dir(const char *path)
 #endif
 }
 
+time_t fs_getmtime(const char *path)
+{
+	struct stat sb;
+	if(stat(path, &sb) == -1)
+		return 0;
+
+	return sb.st_mtime;
+}
+
 int fs_chdir(const char *path)
 {
 	if(fs_is_dir(path))
@@ -1651,6 +1795,57 @@ int fs_rename(const char *oldname, const char *newname)
 {
 	if(rename(oldname, newname) != 0)
 		return 1;
+	return 0;
+}
+
+int fs_read(const char *name, void **result, unsigned *result_len)
+{
+	IOHANDLE file = io_open(name, IOFLAG_READ);
+	*result = 0;
+	*result_len = 0;
+	if(!file)
+	{
+		return 1;
+	}
+	io_read_all(file, result, result_len);
+	io_close(file);
+	return 0;
+}
+
+char *fs_read_str(const char *name)
+{
+	IOHANDLE file = io_open(name, IOFLAG_READ);
+	char *result;
+	if(!file)
+	{
+		return 0;
+	}
+	result = io_read_all_str(file);
+	io_close(file);
+	return result;
+}
+
+int fs_file_time(const char *name, time_t *created, time_t *modified)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	WIN32_FIND_DATA finddata;
+	HANDLE handle = FindFirstFile(name, &finddata);
+	if(handle == INVALID_HANDLE_VALUE)
+		return 1;
+
+	*created = filetime_to_unixtime(&finddata.ftCreationTime);
+	*modified = filetime_to_unixtime(&finddata.ftLastWriteTime);
+#elif defined(CONF_FAMILY_UNIX)
+	struct stat sb;
+	if(stat(name, &sb))
+		return 1;
+
+	*created = sb.st_ctime;
+	*modified = sb.st_mtime;
+#else
+	#error not implemented
+#endif
+
 	return 0;
 }
 
@@ -1728,6 +1923,36 @@ int time_houroftheday()
 	time(&time_data);
 	time_info = localtime(&time_data);
 	return time_info->tm_hour;
+}
+
+int time_season()
+{
+	time_t time_data;
+	struct tm *time_info;
+
+	time(&time_data);
+	time_info = localtime(&time_data);
+
+	switch(time_info->tm_mon)
+	{
+		case 11:
+		case 0:
+		case 1:
+			return SEASON_WINTER;
+		case 2:
+		case 3:
+		case 4:
+			return SEASON_SPRING;
+		case 5:
+		case 6:
+		case 7:
+			return SEASON_SUMMER;
+		case 8:
+		case 9:
+		case 10:
+			return SEASON_AUTUMN;
+	}
+	return SEASON_SPRING; // should never happen
 }
 
 int time_isxmasday()
@@ -1862,7 +2087,7 @@ void str_sanitize_cc(char *str_in)
 }
 
 /* check if the string contains '..' (parent directory) paths */
-int str_check_pathname(const char* str)
+int str_path_unsafe(const char *str)
 {
 	// State machine. 0 means that we're at the beginning
 	// of a new directory/filename, and a positive number represents the number of
@@ -2014,10 +2239,17 @@ char *str_skip_whitespaces(char *str)
 	return str;
 }
 
+const char *str_skip_whitespaces_const(const char *str)
+{
+	while(*str && (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r'))
+		str++;
+	return str;
+}
+
 /* case */
 int str_comp_nocase(const char *a, const char *b)
 {
-#if defined(CONF_FAMILY_WINDOWS)
+#if defined(CONF_FAMILY_WINDOWS) && !defined(__GNUC__)
 	return _stricmp(a,b);
 #else
 	return strcasecmp(a,b);
@@ -2026,7 +2258,7 @@ int str_comp_nocase(const char *a, const char *b)
 
 int str_comp_nocase_num(const char *a, const char *b, const int num)
 {
-#if defined(CONF_FAMILY_WINDOWS)
+#if defined(CONF_FAMILY_WINDOWS) && !defined(__GNUC__)
 	return _strnicmp(a, b, num);
 #else
 	return strncasecmp(a, b, num);
@@ -2193,6 +2425,16 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size)
 	}
 }
 
+int str_is_number(const char *str)
+{
+	while(*str)
+	{
+		if(!(*str >= '0' && *str <= '9'))
+			return -1;
+		str++;
+	}
+	return 0;
+}
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
@@ -2220,10 +2462,28 @@ void str_timestamp(char *buffer, int buffer_size)
 #pragma GCC diagnostic pop
 #endif
 
+int str_span(const char *str, const char *set)
+{
+	return strcspn(str, set);
+}
 
 int mem_comp(const void *a, const void *b, int size)
 {
 	return memcmp(a,b,size);
+}
+
+int mem_has_null(const void *block, unsigned size)
+{
+	const unsigned char *bytes = block;
+	unsigned i;        
+	for(i = 0; i < size; i++)
+	{
+		if(bytes[i] == 0)
+		{
+			return 1;
+		}
+	}
+	return 0;
 }
 
 void net_stats(NETSTATS *stats_inout)
@@ -2247,7 +2507,7 @@ int str_utf8_is_whitespace(int code)
 {
 	// check if unicode is not empty
 	if(code > 0x20 && code != 0xA0 && code != 0x034F && (code < 0x2000 || code > 0x200F) && (code < 0x2028 || code > 0x202F) &&
-		(code < 0x205F || code > 0x2064) && (code < 0x206A || code > 0x206F) && (code < 0xFE00 || code > 0xFE0F) &&
+		(code < 0x205F || code > 0x2064) && (code < 0x206A || code > 0x206F) && code != 0x3000  && (code < 0xFE00 || code > 0xFE0F) &&
 		code != 0xFEFF && (code < 0xFFF9 || code > 0xFFFC))
 	{
 		return 0;
@@ -2440,6 +2700,22 @@ int str_utf8_check(const char *str)
 	return 1;
 }
 
+void str_utf8_copy_num(char *dst, const char *src, int dst_size, int num)
+{
+	int new_cursor;
+	int cursor = 0;
+
+	while(src[cursor])
+	{
+		new_cursor = str_utf8_forward(src, cursor);
+		if(new_cursor >= dst_size)			// reserve 1 byte for the null termination
+			break;
+		else
+			cursor = new_cursor;
+	}
+
+	str_copy(dst, src, cursor < dst_size ? cursor+1 : dst_size);
+}
 
 unsigned str_quickhash(const char *str)
 {
@@ -2525,6 +2801,14 @@ int pid()
 unsigned bytes_be_to_uint(const unsigned char *bytes)
 {
 	return (bytes[0]<<24) | (bytes[1]<<16) | (bytes[2]<<8) | bytes[3];
+}
+
+void uint_to_bytes_be(unsigned char *bytes, unsigned value)
+{
+	bytes[0] = (value>>24)&0xff;
+	bytes[1] = (value>>16)&0xff;
+	bytes[2] = (value>>8)&0xff;
+	bytes[3] = value&0xff;
 }
 
 #if defined(__cplusplus)

@@ -6,7 +6,7 @@
 
 inline int NetComp(const NETADDR *pAddr1, const NETADDR *pAddr2)
 {
-	return mem_comp(pAddr1, pAddr2, pAddr1->type==NETTYPE_IPV4 ? 8 : 20);
+	return net_addr_comp(pAddr1, pAddr2, false);
 }
 
 class CNetRange
@@ -15,12 +15,12 @@ public:
 	NETADDR m_LB;
 	NETADDR m_UB;
 
-	bool IsValid() const { return m_LB.type == m_UB.type && NetComp(&m_LB, &m_UB) < 0; }
+	bool IsValid() const { return m_LB.type == m_UB.type && mem_comp(m_LB.ip, m_UB.ip, m_LB.type==NETTYPE_IPV4 ? NETADDR_SIZE_IPV4 : NETADDR_SIZE_IPV6) < 0; }
 };
 
 inline int NetComp(const CNetRange *pRange1, const CNetRange *pRange2)
 {
-	return NetComp(&pRange1->m_LB, &pRange2->m_LB) || NetComp(&pRange1->m_UB, &pRange2->m_UB);
+	return net_addr_comp(&pRange1->m_LB, &pRange2->m_LB, false) || net_addr_comp(&pRange1->m_UB, &pRange2->m_UB, false);
 }
 
 
@@ -59,9 +59,6 @@ protected:
 		str_format(pBuffer, BufferSize, "'%s' - '%s'", aAddrStr1, aAddrStr2);
 		return pBuffer;
 	}
-
-	// todo: move?
-	static bool StrAllnum(const char *pStr);
 
 	class CNetHash
 	{
@@ -180,12 +177,11 @@ public:
 	int UnbanByRange(const CNetRange *pRange);
 	int UnbanByIndex(int Index);
 	void UnbanAll();
+	template<class T> bool IsBannable(const T *pData);
 	bool IsBanned(const NETADDR *pAddr, char *pBuf, unsigned BufferSize, int *pLastInfoQuery);
 
 	static void ConBan(class IConsole::IResult *pResult, void *pUser);
-	static void ConBanRange(class IConsole::IResult *pResult, void *pUser);
 	static void ConUnban(class IConsole::IResult *pResult, void *pUser);
-	static void ConUnbanRange(class IConsole::IResult *pResult, void *pUser);
 	static void ConUnbanAll(class IConsole::IResult *pResult, void *pUser);
 	static void ConBans(class IConsole::IResult *pResult, void *pUser);
 	static void ConBansSave(class IConsole::IResult *pResult, void *pUser);
