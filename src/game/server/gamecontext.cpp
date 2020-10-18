@@ -1344,11 +1344,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
             else if(pPlayer->m_LastKillRequest+Server()->TickSpeed()*1 > Server()->Tick())
                 return;//don't send a message
-            else if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown > Server()->Tick())
+            else if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*Config()->m_SvSelfkillCooldown > Server()->Tick())
             {
                 pPlayer->m_LastKillRequest = Server()->Tick();
                 char aSelfkill[128];
-                float seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*g_Config.m_SvSelfkillCooldown-Server()->Tick()*1.0f)/Server()->TickSpeed();
+                float seconds = (pPlayer->m_LastKill+Server()->TickSpeed()*Config()->m_SvSelfkillCooldown-Server()->Tick()*1.0f)/Server()->TickSpeed();
                 str_format(aSelfkill, sizeof(aSelfkill), "You can't kill yourself for %.2f second(s)", seconds);
                 SendServerInfo(aSelfkill, ClientID);
                 return;
@@ -1877,9 +1877,11 @@ void CGameContext::OnInit()
 	m_Collision.Init(&m_Layers);
 
 	// select gametype
+
     m_pController = new CGameControllerCatch64(this);
 
-	m_pController->RegisterChatCommands(CommandManager());
+    // IDK how this works now
+	//m_pController->RegisterChatCommands(CommandManager());
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();

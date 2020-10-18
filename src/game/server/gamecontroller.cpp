@@ -57,9 +57,6 @@ IGameController::IGameController(CGameContext *pGameServer)
 
 	m_TopTeam = -1;
 	m_StartWeapon = 4;//Weapon laser;
-
-	// commands
-	CommandsManager()->OnInit();
 }
 
 //activity
@@ -657,7 +654,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			GameServer()->m_World.m_Paused = true;
 			if(m_TopTeam >= 0 && m_TopTeam < MAX_PLAYERS && GameServer()->m_apPlayers[m_TopTeam]) {
                 char aBuf[256];
-                GameServer()->m_apPlayers[m_TopTeam]->m_Score+=g_Config.m_SvWinBonus;
+                GameServer()->m_apPlayers[m_TopTeam]->m_Score+=Config()->m_SvWinBonus;
                 char colorbuf[5];
                 TeamHandler::getInstance().HSLtoRGBString(m_TopTeam, colorbuf);
                 str_format(aBuf, sizeof(aBuf), "%s■■■^999 Team '%s' of player '%s' won the round! %s■■■", colorbuf, TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam), colorbuf);

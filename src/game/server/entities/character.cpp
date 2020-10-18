@@ -751,7 +751,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	OR Weapon is Grenade and Damage is too small (prevents Explosions beeing to strong)*/
     if((GameServer()->m_apPlayers[From] && GameServer()->m_apPlayers[From]->GetTeamID() == m_pPlayer->GetTeamID() && From != m_pPlayer->GetCID())
         || (From == m_pPlayer->GetCID() && Weapon >= WEAPON_HAMMER)
-        || (Weapon == WEAPON_GRENADE && Dmg < g_Config.m_SvMinGrenadeDmg))
+        || (Weapon == WEAPON_GRENADE && Dmg < Config()->m_SvMinGrenadeDmg))
     {
         return false;
     }

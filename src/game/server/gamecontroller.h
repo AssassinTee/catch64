@@ -132,6 +132,10 @@ protected:
 
 	int m_TopscoreCount;
 
+	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
+	void ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
+	void ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
+
 
 public:
 	IGameController(class CGameContext *pGameServer);
@@ -243,7 +247,7 @@ public:
 	int GetStartWeapon(){ return m_StartWeapon;}
 
 	//static void Com_Example(IConsole::IResult *pResult, void *pContext);
-	virtual void RegisterChatCommands(CCommandManager *pManager);
+	//virtual void RegisterChatCommands(CCommandManager *pManager);
 };
 
 #endif
