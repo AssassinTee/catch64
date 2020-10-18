@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <engine/shared/config.h>
+
 #include <generated/server_data.h>
 #include <game/server/gamecontext.h>
 
@@ -68,6 +70,11 @@ void CLaser::DoBounce()
 				m_Energy = -1;
 
 			GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
+
+			if(Config()->m_SvLaserJump)
+            {
+                GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_LASER, Config()->m_SvLaserExplosionDamage);
+            }
 		}
 	}
 	else

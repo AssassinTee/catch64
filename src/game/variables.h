@@ -147,6 +147,12 @@ MACRO_CONFIG_INT(SvSelfkillCooldown, sv_selfkill_cooldown, 15, 3, 9999, CFGFLAG_
 MACRO_CONFIG_INT(SvWinBonus, sv_win_bonus, 5, 0, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Bonus for Winning Team leader");
 MACRO_CONFIG_INT(SvMinGrenadeDmg, sv_min_grenade_dmg, 4, 0, 6, CFGFLAG_SAVE|CFGFLAG_SERVER, "Minium damage for players to switch team");
 
+MACRO_CONFIG_INT(SvLaserJump, sv_laser_jump, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Laser Explosions");
+MACRO_CONFIG_INT(SvLaserExplosionDamage, sv_laser_explosion_damage, 4, 0, 6, CFGFLAG_SAVE|CFGFLAG_SERVER, "Laser Explosion Damage");
+
+MACRO_CONFIG_INT(SvRandomSpawn, sv_random_spawn, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Activate Random Spawning");
+MACRO_CONFIG_INT(SvRandomSpawnTries, sv_random_spawn, 100, 1, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Tries for random spawn per player per tick");
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")

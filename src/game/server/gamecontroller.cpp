@@ -1059,9 +1059,16 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos) const
 	}
 	else
 	{
-		EvaluateSpawnType(&Eval, 0);
-		EvaluateSpawnType(&Eval, 1);
-		EvaluateSpawnType(&Eval, 2);
+	    if(Config()->m_SvRandomSpawn)//random spawning
+        {
+            EvaluateSpawnRandom(&Eval);
+	    }
+	    else//classical spawning
+        {
+            EvaluateSpawnType(&Eval, 0);
+            EvaluateSpawnType(&Eval, 1);
+            EvaluateSpawnType(&Eval, 2);
+        }
 	}
 
 	*pOutPos = Eval.m_Pos;
@@ -1119,6 +1126,48 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 			pEval->m_Pos = P;
 		}
 	}
+}
+
+void IGameController::EvaluateSpawnRandom(CSpawnEval *pEval) const
+{
+    int spawn_tries = Config()->m_SvRandomSpawnTries;
+    while(spawn_tries--)
+    {
+        int spawn_type = rand()%3;
+        if(m_aNumSpawnPoints[spawn_type])
+        {
+            int spawn_id = rand()%m_aNumSpawnPoints[spawn_type];
+
+            // check if the position is occupado (occupied)
+            CCharacter *aEnts[MAX_CLIENTS];
+            int Num = GameServer()->m_World.FindEntities(m_aaSpawnPoints[spawn_type][spawn_id], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+            vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };	// start, left, up, right, down
+            int Result = -1;
+            for(int Index = 0; Index < 5 && Result == -1; ++Index)
+            {
+                Result = Index;
+                for(int c = 0; c < Num; ++c)
+                    if(GameServer()->Collision()->CheckPoint(m_aaSpawnPoints[spawn_type][spawn_id]+Positions[Index]) ||
+                        distance(aEnts[c]->GetPos(), m_aaSpawnPoints[spawn_type][spawn_id]+Positions[Index]) <= aEnts[c]->GetProximityRadius())
+                    {
+                        Result = -1;
+                        break;
+                    }
+            }
+            if(Result == -1)
+                continue;	// try next spawn point
+
+            vec2 P = m_aaSpawnPoints[spawn_type][spawn_id]+Positions[Result];
+            float S = pEval->m_RandomSpawn ? random_int() : EvaluateSpawnPos(pEval, P);
+            if(!pEval->m_Got || pEval->m_Score > S)
+            {
+                pEval->m_Got = true;
+                pEval->m_Score = S;
+                pEval->m_Pos = P;
+                break;//Found Spawn, I don't care about the score, maybe future Assa will
+            }
+        }
+    }
 }
 
 bool IGameController::GetStartRespawnState() const

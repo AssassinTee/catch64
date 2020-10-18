@@ -94,6 +94,7 @@ class IGameController
 
 	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const;
 	void EvaluateSpawnType(CSpawnEval *pEval, int Type) const;
+	void EvaluateSpawnRandom(CSpawnEval *pEval) const;
 
 	// team
 	int ClampTeam(int Team) const;
