@@ -19,13 +19,18 @@ void CLayers::Init(class IKernel *pKernel, IMap *pMap)
 	m_pMap->GetType(MAPITEMTYPE_GROUP, &m_GroupsStart, &m_GroupsNum);
 	m_pMap->GetType(MAPITEMTYPE_LAYER, &m_LayersStart, &m_LayersNum);
 
+	InitGameLayer();
+	InitTilemapSkip();
+}
+
+void CLayers::InitGameLayer()
+{
 	for(int g = 0; g < NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = GetGroup(g);
 		for(int l = 0; l < pGroup->m_NumLayers; l++)
 		{
 			CMapItemLayer *pLayer = GetLayer(pGroup->m_StartLayer+l);
-
 			if(pLayer->m_Type == LAYERTYPE_TILES)
 			{
 				CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
@@ -50,6 +55,38 @@ void CLayers::Init(class IKernel *pKernel, IMap *pMap)
 					}
 
 					break;
+				}
+			}
+		}
+	}
+}
+
+void CLayers::InitTilemapSkip()
+{
+	for(int g = 0; g < NumGroups(); g++)
+	{
+		CMapItemGroup *pGroup = GetGroup(g);
+		for(int l = 0; l < pGroup->m_NumLayers; l++)
+		{
+			CMapItemLayer *pLayer = GetLayer(pGroup->m_StartLayer+l);
+			if(pLayer->m_Type == LAYERTYPE_TILES)
+			{
+				CMapItemLayerTilemap *pTilemap = (CMapItemLayerTilemap *)pLayer;
+				CTile *pTiles = (CTile *)Map()->GetData(pTilemap->m_Data);
+				for(int y = 0; y < pTilemap->m_Height; y++)
+				{
+					for(int x = 1; x < pTilemap->m_Width;)
+					{
+						int SkippedX;
+						for(SkippedX = 1; x+SkippedX < pTilemap->m_Width && SkippedX < 255; SkippedX++)
+						{
+							if(pTiles[y*pTilemap->m_Width+x+SkippedX].m_Index)
+								break;
+						}
+
+						pTiles[y*pTilemap->m_Width+x].m_Skip = SkippedX-1;
+						x += SkippedX;
+					}
 				}
 			}
 		}

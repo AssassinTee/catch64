@@ -85,7 +85,7 @@ public:
 	// TODO: clean this up
 	struct TeeInfos
 	{
-		char m_aaSkinPartNames[NUM_SKINPARTS][24];
+		char m_aaSkinPartNames[NUM_SKINPARTS][MAX_SKIN_LENGTH];
 		int m_aUseCustomColors[NUM_SKINPARTS];
 		int m_aSkinPartColors[NUM_SKINPARTS];
 	} m_TeeInfosOriginal, m_TeeInfos;

@@ -37,6 +37,7 @@ class CGameClient : public IGameClient
 	class ITextRender *m_pTextRender;
 	class IClient *m_pClient;
 	class ISound *m_pSound;
+	class CConfig *m_pConfig;
 	class IConsole *m_pConsole;
 	class IStorage *m_pStorage;
 	class IDemoPlayer *m_pDemoPlayer;
@@ -80,6 +81,7 @@ public:
 	class ISound *Sound() const { return m_pSound; }
 	class IInput *Input() const { return m_pInput; }
 	class IStorage *Storage() const { return m_pStorage; }
+	class CConfig *Config() const { return m_pConfig; }
 	class IConsole *Console() { return m_pConsole; }
 	class ITextRender *TextRender() const { return m_pTextRender; }
 	class IDemoPlayer *DemoPlayer() const { return m_pDemoPlayer; }
@@ -114,9 +116,27 @@ public:
 
 	vec2 m_LocalCharacterPos;
 
-	// predicted players
-	CCharacterCore m_PredictedPrevChar;
-	CCharacterCore m_PredictedChar;
+	// Whether we should use/render predicted entities. Depends on client
+	// and game state.
+	bool ShouldUsePredicted() const;
+
+	// Whether we should use/render predictions for a specific `ClientID`.
+	// Should check `ShouldUsePredicted` before checking this.
+	bool ShouldUsePredictedChar(int ClientID) const;
+
+	// Replaces `pPrevChar`, `pPlayerChar`, and `IntraTick` with their predicted
+	// counterparts for `ClientID`. Should check `ShouldUsePredictedChar`
+	// before using this.
+	void UsePredictedChar(
+		CNetObj_Character *pPrevChar,
+		CNetObj_Character *pPlayerChar,
+		float *IntraTick,
+		int ClientID
+	) const;
+
+	vec2 GetCharPos(int ClientID, bool Predicted = false) const;
+
+	// ---
 
 	struct CPlayerInfoItem
 	{
@@ -177,10 +197,10 @@ public:
 	// client data
 	struct CClientData
 	{
-		char m_aName[MAX_NAME_LENGTH];
-		char m_aClan[MAX_CLAN_LENGTH];
+		char m_aName[MAX_NAME_LENGTH*UTF8_BYTE_LENGTH];
+		char m_aClan[MAX_CLAN_LENGTH*UTF8_BYTE_LENGTH];
 		int m_Country;
-		char m_aaSkinPartNames[NUM_SKINPARTS][24];
+		char m_aaSkinPartNames[NUM_SKINPARTS][MAX_SKIN_LENGTH];
 		int m_aUseCustomColors[NUM_SKINPARTS];
 		int m_aSkinPartColors[NUM_SKINPARTS];
 		int m_SkinPartIDs[NUM_SKINPARTS];
@@ -188,9 +208,12 @@ public:
 		int m_Emoticon;
 		int m_EmoticonStart;
 		CCharacterCore m_Predicted;
+		CCharacterCore m_PrevPredicted;
 
 		CTeeRenderInfo m_SkinInfo; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
+
+		CNetObj_Character m_Evolved;
 
 		float m_Angle;
 		bool m_Active;
@@ -209,7 +232,9 @@ public:
 	float m_TeamChangeTime;
 	bool m_IsXmasDay;
 	float m_LastSkinChangeTime;
+	int m_IdentityState;
 	bool m_IsEasterDay;
+	bool m_InitComplete;
 
 	struct CGameInfo
 	{
@@ -265,16 +290,22 @@ public:
 	virtual const char *NetVersionHashUsed() const;
 	virtual const char *NetVersionHashReal() const;
 	virtual int ClientVersion() const;
-	static void GetPlayerLabel(char* aBuf, int BufferSize, int ClientID, const char* ClientName);
+	void GetPlayerLabel(char* aBuf, int BufferSize, int ClientID, const char* ClientName);
+	void StartRendering();
+
 	bool IsXmas() const;
 	bool IsEaster() const;
-
 	int RacePrecision() const { return m_Snap.m_pGameDataRace ? m_Snap.m_pGameDataRace->m_Precision : 3; }
+	bool IsWorldPaused() const { return m_Snap.m_pGameData && (m_Snap.m_pGameData->m_GameStateFlags&(GAMESTATEFLAG_PAUSED|GAMESTATEFLAG_ROUNDOVER|GAMESTATEFLAG_GAMEOVER)); }
+	bool IsDemoPlaybackPaused() const;
+	float GetAnimationPlaybackSpeed() const;
 
 	//
 	void DoEnterMessage(const char *pName, int ClientID, int Team);
 	void DoLeaveMessage(const char *pName, int ClientID, const char *pReason);
 	void DoTeamChangeMessage(const char *pName, int ClientID, int Team);
+
+	int GetClientID(const char *pName);
 
 	// actions
 	// TODO: move these

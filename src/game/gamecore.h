@@ -147,8 +147,11 @@ class CCharacterCore
 	CWorldCore *m_pWorld;
 	CCollision *m_pCollision;
 public:
+	static const float PHYS_SIZE;
 	vec2 m_Pos;
 	vec2 m_Vel;
+
+	vec2 m_HookDragVel;
 
 	vec2 m_HookPos;
 	vec2 m_HookDir;
@@ -172,8 +175,11 @@ public:
 	void Tick(bool UseInput);
 	void Move();
 
+	void AddDragVelocity();
+	void ResetDragVelocity();
+
 	void Read(const CNetObj_CharacterCore *pObjCore);
-	void Write(CNetObj_CharacterCore *pObjCore);
+	void Write(CNetObj_CharacterCore *pObjCore) const;
 	void Quantize();
 };
 

@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/graphics.h>
 #include <engine/demo.h>
+#include <engine/shared/config.h>
 #include <generated/protocol.h>
 #include <generated/client_data.h>
 
@@ -37,11 +38,16 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	}
 
 	static float s_LastGameTickTime = Client()->GameTickTime();
-	if(m_pClient->m_Snap.m_pGameData && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
+	if(!m_pClient->IsWorldPaused() && !m_pClient->IsDemoPlaybackPaused())
 		s_LastGameTickTime = Client()->GameTickTime();
-	float Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + s_LastGameTickTime;
+	
+	float Ct;
+	if(m_pClient->ShouldUsePredicted() && Config()->m_ClPredictProjectiles)
+		Ct = ((float)(Client()->PredGameTick() - 1 - pCurrent->m_StartTick) + Client()->PredIntraGameTick())/(float)SERVER_TICK_SPEED;
+	else
+		Ct = (Client()->PrevGameTick()-pCurrent->m_StartTick)/(float)SERVER_TICK_SPEED + s_LastGameTickTime;
 	if(Ct < 0)
-		return; // projectile havn't been shot yet
+		return; // projectile haven't been shot yet
 
 	vec2 StartPos(pCurrent->m_X, pCurrent->m_Y);
 	vec2 StartVel(pCurrent->m_VelX/100.0f, pCurrent->m_VelY/100.0f);
@@ -61,23 +67,12 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 	if(pCurrent->m_Type == WEAPON_GRENADE)
 	{
 		m_pClient->m_pEffects->SmokeTrail(Pos, Vel*-1);
+		const float Now = Client()->LocalTime();
 		static float s_Time = 0.0f;
-		static float s_LastLocalTime = Client()->LocalTime();
-
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
-		{
-			const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-			if(!pInfo->m_Paused)
-				s_Time += (Client()->LocalTime()-s_LastLocalTime)*pInfo->m_Speed;
-		}
-		else
-		{
-			if(m_pClient->m_Snap.m_pGameData && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
-				s_Time += Client()->LocalTime()-s_LastLocalTime;
-		}
-
+		static float s_LastLocalTime = Now;
+		s_Time += (Now - s_LastLocalTime) * m_pClient->GetAnimationPlaybackSpeed();
 		Graphics()->QuadsSetRotation(s_Time*pi*2*2 + ItemID);
-		s_LastLocalTime = Client()->LocalTime();
+		s_LastLocalTime = Now;
 	}
 	else
 	{
@@ -142,23 +137,14 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 
 	Graphics()->QuadsSetRotation(Angle);
 
+	const float Now = Client()->LocalTime();
 	static float s_Time = 0.0f;
-	static float s_LastLocalTime = Client()->LocalTime();
-	float Offset = Pos.y/32.0f + Pos.x/32.0f;
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
-	{
-		const IDemoPlayer::CInfo *pInfo = DemoPlayer()->BaseInfo();
-		if(!pInfo->m_Paused)
-			s_Time += (Client()->LocalTime()-s_LastLocalTime)*pInfo->m_Speed;
-	}
-	else
-	{
-		if(m_pClient->m_Snap.m_pGameData && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
-			s_Time += Client()->LocalTime()-s_LastLocalTime;
- 	}
+	static float s_LastLocalTime = Now;
+	s_Time += (Now - s_LastLocalTime) * m_pClient->GetAnimationPlaybackSpeed();
+	const float Offset = Pos.y/32.0f + Pos.x/32.0f;
 	Pos.x += cosf(s_Time*2.0f+Offset)*2.5f;
 	Pos.y += sinf(s_Time*2.0f+Offset)*2.5f;
-	s_LastLocalTime = Client()->LocalTime();
+	s_LastLocalTime = Now;
 	RenderTools()->DrawSprite(Pos.x, Pos.y, Size);
 	Graphics()->QuadsEnd();
 }
@@ -189,11 +175,15 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 			(pCurrent->m_Team == TEAM_BLUE && pPrevGameDataFlag->m_FlagCarrierBlue != pCurGameDataFlag->m_FlagCarrierBlue)))
 			Pos = vec2(pCurrent->m_X, pCurrent->m_Y);
 
-		// make sure to use predicted position if we are the carrier
-		if(m_pClient->m_LocalClientID != -1 &&
-			((pCurrent->m_Team == TEAM_RED && pCurGameDataFlag->m_FlagCarrierRed == m_pClient->m_LocalClientID) ||
-			(pCurrent->m_Team == TEAM_BLUE && pCurGameDataFlag->m_FlagCarrierBlue == m_pClient->m_LocalClientID)))
-			Pos = m_pClient->m_LocalCharacterPos;
+		int FlagCarrier = -1;
+		if(pCurrent->m_Team == TEAM_RED && pCurGameDataFlag->m_FlagCarrierRed >= 0)
+			FlagCarrier = pCurGameDataFlag->m_FlagCarrierRed;
+		else if(pCurrent->m_Team == TEAM_BLUE && pCurGameDataFlag->m_FlagCarrierBlue >= 0)
+			FlagCarrier = pCurGameDataFlag->m_FlagCarrierBlue;
+
+		// make sure to use predicted position
+		if(FlagCarrier >= 0 && FlagCarrier < MAX_CLIENTS && m_pClient->ShouldUsePredicted() && m_pClient->ShouldUsePredictedChar(FlagCarrier))
+			Pos = m_pClient->GetCharPos(FlagCarrier, true);
 	}
 
 	IGraphics::CQuadItem QuadItem(Pos.x, Pos.y-Size*0.75f, Size, Size*2);
@@ -306,7 +296,7 @@ void CItems::OnRender()
 		if(Item.m_Type == NETOBJTYPE_FLAG)
 		{
 			const void *pPrev = Client()->SnapFindItem(IClient::SNAP_PREV, Item.m_Type, Item.m_ID);
-			if (pPrev)
+			if(pPrev)
 			{
 				const void *pPrevGameDataFlag = Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_GAMEDATAFLAG, m_pClient->m_Snap.m_GameDataFlagSnapID);
 				RenderFlag(static_cast<const CNetObj_Flag *>(pPrev), static_cast<const CNetObj_Flag *>(pData),

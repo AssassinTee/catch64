@@ -14,17 +14,16 @@ class CStorage : public IStorage
 public:
 	enum
 	{
-		MAX_PATHS = 16,
-		MAX_PATH_LENGTH = 512
+		MAX_PATHS = 16
 	};
 
-	char m_aaStoragePaths[MAX_PATHS][MAX_PATH_LENGTH];
+	char m_aaStoragePaths[MAX_PATHS][IO_MAX_PATH_LENGTH];
 	int m_NumPaths;
-	char m_aDataDir[MAX_PATH_LENGTH];
-	char m_aUserDir[MAX_PATH_LENGTH];
-	char m_aCurrentDir[MAX_PATH_LENGTH];
-	char m_aAppDir[MAX_PATH_LENGTH];
-	
+	char m_aDataDir[IO_MAX_PATH_LENGTH];
+	char m_aUserDir[IO_MAX_PATH_LENGTH];
+	char m_aCurrentDir[IO_MAX_PATH_LENGTH];
+	char m_aAppDir[IO_MAX_PATH_LENGTH];
+
 	CStorage()
 	{
 		mem_zero(m_aaStoragePaths, sizeof(m_aaStoragePaths));
@@ -39,7 +38,7 @@ public:
 	{
 		// get userdir
 		fs_storage_path(pApplicationName, m_aUserDir, sizeof(m_aUserDir));
-		
+
 		// get appdir
 		FindAppDir(ppArguments[0]);
 
@@ -64,7 +63,7 @@ public:
 		{
 			if(m_NumPaths && (!m_aaStoragePaths[TYPE_SAVE][0] || !fs_makedir_recursive(m_aaStoragePaths[TYPE_SAVE])))
 			{
-				char aPath[MAX_PATH_LENGTH];
+				char aPath[IO_MAX_PATH_LENGTH];
 				if(StorageType == STORAGETYPE_CLIENT)
 				{
 					fs_makedir(GetPath(TYPE_SAVE, "screenshots", aPath, sizeof(aPath)));
@@ -95,7 +94,7 @@ public:
 		if(!File)
 		{
 			// check usable path in argv[0]
-			char aBuffer[MAX_PATH_LENGTH];
+			char aBuffer[IO_MAX_PATH_LENGTH];
 			str_copy(aBuffer, m_aAppDir, sizeof(aBuffer));
 			str_append(aBuffer, "/storage.cfg", sizeof(aBuffer));
 			File = io_open(aBuffer, IOFLAG_READ);
@@ -154,7 +153,7 @@ public:
 			{
 				if(!IsDuplicatePath(m_aUserDir))
 				{
-					str_copy(m_aaStoragePaths[m_NumPaths++], m_aUserDir, MAX_PATH_LENGTH);
+					str_copy(m_aaStoragePaths[m_NumPaths++], m_aUserDir, IO_MAX_PATH_LENGTH);
 					dbg_msg("storage", "added path '$USERDIR' ('%s')", m_aUserDir);
 				}
 				else
@@ -167,7 +166,7 @@ public:
 			{
 				if(!IsDuplicatePath(m_aDataDir))
 				{
-					str_copy(m_aaStoragePaths[m_NumPaths++], m_aDataDir, MAX_PATH_LENGTH);
+					str_copy(m_aaStoragePaths[m_NumPaths++], m_aDataDir, IO_MAX_PATH_LENGTH);
 					dbg_msg("storage", "added path '$DATADIR' ('%s')", m_aDataDir);
 				}
 				else
@@ -180,7 +179,7 @@ public:
 			{
 				if(!IsDuplicatePath(m_aCurrentDir))
 				{
-					str_copy(m_aaStoragePaths[m_NumPaths++], m_aCurrentDir, MAX_PATH_LENGTH);
+					str_copy(m_aaStoragePaths[m_NumPaths++], m_aCurrentDir, IO_MAX_PATH_LENGTH);
 					dbg_msg("storage", "added path '$CURRENTDIR' ('%s')", m_aCurrentDir);
 				}
 				else
@@ -193,7 +192,7 @@ public:
 			{
 				if(!IsDuplicatePath(m_aAppDir))
 				{
-					str_copy(m_aaStoragePaths[m_NumPaths++], m_aAppDir, MAX_PATH_LENGTH);
+					str_copy(m_aaStoragePaths[m_NumPaths++], m_aAppDir, IO_MAX_PATH_LENGTH);
 					dbg_msg("storage", "added path '$APPDIR' ('%s')", m_aAppDir);
 				}
 				else
@@ -206,7 +205,7 @@ public:
 			{
 				if(!IsDuplicatePath(pPath))
 				{
-					str_copy(m_aaStoragePaths[m_NumPaths++], pPath, MAX_PATH_LENGTH);
+					str_copy(m_aaStoragePaths[m_NumPaths++], pPath, IO_MAX_PATH_LENGTH);
 					dbg_msg("storage", "added path '%s'", pPath);
 				}
 				else
@@ -214,7 +213,7 @@ public:
 			}
 		}
 	}
-	
+
 	void FindAppDir(const char *pArgv0)
 	{
 		// check for usable path in argv[0]
@@ -222,8 +221,8 @@ public:
 		for(unsigned i = 0; pArgv0[i]; ++i)
 			if(pArgv0[i] == '/' || pArgv0[i] == '\\')
 				Pos = i;
-		
-		if(Pos < MAX_PATH_LENGTH)
+
+		if(Pos < IO_MAX_PATH_LENGTH)
 		{
 			str_copy(m_aAppDir, pArgv0, Pos+1);
 			if(!fs_is_dir(m_aAppDir))
@@ -249,7 +248,7 @@ public:
 
 		// 3) check for usable path in argv[0]
 		{
-			char aBaseDir[MAX_PATH_LENGTH];
+			char aBaseDir[IO_MAX_PATH_LENGTH];
 			str_copy(aBaseDir, m_aAppDir, sizeof(aBaseDir));
 			str_format(m_aDataDir, sizeof(m_aDataDir), "%s/data", aBaseDir);
 			str_append(aBaseDir, "/data/mapres", sizeof(aBaseDir));
@@ -294,7 +293,7 @@ public:
 
 	virtual void ListDirectory(int Type, const char *pPath, FS_LISTDIR_CALLBACK pfnCallback, void *pUser)
 	{
-		char aBuffer[MAX_PATH_LENGTH];
+		char aBuffer[IO_MAX_PATH_LENGTH];
 		if(Type == TYPE_ALL)
 		{
 			// list all available directories
@@ -308,6 +307,22 @@ public:
 		}
 	}
 
+	virtual void ListDirectoryFileInfo(int Type, const char *pPath, FS_LISTDIR_CALLBACK_FILEINFO pfnCallback, void *pUser)
+	{
+		char aBuffer[IO_MAX_PATH_LENGTH];
+		if(Type == TYPE_ALL)
+		{
+			// list all available directories
+			for(int i = 0; i < m_NumPaths; ++i)
+				fs_listdir_fileinfo(GetPath(i, pPath, aBuffer, sizeof(aBuffer)), pfnCallback, i, pUser);
+		}
+		else if(Type >= 0 && Type < m_NumPaths)
+		{
+			// list wanted directory
+			fs_listdir_fileinfo(GetPath(Type, pPath, aBuffer, sizeof(aBuffer)), pfnCallback, Type, pUser);
+		}
+	}
+
 	const char *GetPath(int Type, const char *pDir, char *pBuffer, unsigned BufferSize)
 	{
 		str_format(pBuffer, BufferSize, "%s%s%s", m_aaStoragePaths[Type], !m_aaStoragePaths[Type][0] ? "" : "/", pDir);
@@ -318,7 +333,7 @@ public:
 	// of one of the storage paths.
 	virtual IOHANDLE OpenFile(const char *pFilename, int Flags, int Type, char *pBuffer = 0, int BufferSize = 0, FCheckCallback pfnCheckCB = 0, const void *pCheckCBData = 0)
 	{
-		char aBuffer[MAX_PATH_LENGTH];
+		char aBuffer[IO_MAX_PATH_LENGTH];
 		if(!pBuffer)
 		{
 			pBuffer = aBuffer;
@@ -333,9 +348,9 @@ public:
 		//
 		// E. g. "/etc/passwd" => "/path/to/storage//etc/passwd", which
 		// is safe.
-		if(str_check_pathname(pFilename) != 0)
+		if(str_path_unsafe(pFilename) != 0)
 		{
-			pBuffer[0] = 0;
+			dbg_msg("storage", "refusing to open path which looks like it could escape those specified in 'storage.cfg': %s", pFilename);
 			return 0;
 		}
 
@@ -348,7 +363,7 @@ public:
 		{
 			IOHANDLE Handle = 0;
 			int LB = 0, UB = m_NumPaths;	// check all available directories
-			
+
 			if(Type >= 0 && Type < m_NumPaths)	// check wanted directory
 			{
 				LB = Type;
@@ -378,6 +393,32 @@ public:
 		return 0;
 	}
 
+	bool ReadFile(const char *pFilename, int Type, void **ppResult, unsigned *pResultLen)
+	{
+		IOHANDLE File = OpenFile(pFilename, IOFLAG_READ, Type);
+		*ppResult = 0;
+		*pResultLen = 0;
+		if(!File)
+		{
+			return true;
+		}
+		io_read_all(File, ppResult, pResultLen);
+		io_close(File);
+		return false;
+	}
+
+	char *ReadFileStr(const char *pFilename, int Type)
+	{
+		IOHANDLE File = OpenFile(pFilename, IOFLAG_READ, Type);
+		if(!File)
+		{
+			return 0;
+		}
+		char *pResult = io_read_all_str(File);
+		io_close(File);
+		return pResult;
+	}
+
 	struct CFindCBData
 	{
 		CStorage *m_pStorage;
@@ -400,8 +441,8 @@ public:
 				return 0;
 
 			// search within the folder
-			char aBuf[MAX_PATH_LENGTH];
-			char aPath[MAX_PATH_LENGTH];
+			char aBuf[IO_MAX_PATH_LENGTH];
+			char aPath[IO_MAX_PATH_LENGTH];
 			str_format(aPath, sizeof(aPath), "%s/%s", Data.m_pPath, pName);
 			Data.m_pPath = aPath;
 			fs_listdir(Data.m_pStorage->GetPath(Type, aPath, aBuf, sizeof(aBuf)), FindFileCallback, Type, &Data);
@@ -425,7 +466,7 @@ public:
 					return 0;
 				}
 			}
-			
+
 			return 1;
 		}
 
@@ -439,8 +480,8 @@ public:
 
 		pCBData->m_pBuffer[0] = 0;
 
-		char aBuf[MAX_PATH_LENGTH];
-		
+		char aBuf[IO_MAX_PATH_LENGTH];
+
 		if(Type == TYPE_ALL)
 		{
 			// search within all available directories
@@ -495,7 +536,7 @@ public:
 		if(Type < 0 || Type >= m_NumPaths)
 			return false;
 
-		char aBuffer[MAX_PATH_LENGTH];
+		char aBuffer[IO_MAX_PATH_LENGTH];
 		return !fs_remove(GetPath(Type, pFilename, aBuffer, sizeof(aBuffer)));
 	}
 
@@ -503,8 +544,8 @@ public:
 	{
 		if(Type < 0 || Type >= m_NumPaths)
 			return false;
-		char aOldBuffer[MAX_PATH_LENGTH];
-		char aNewBuffer[MAX_PATH_LENGTH];
+		char aOldBuffer[IO_MAX_PATH_LENGTH];
+		char aNewBuffer[IO_MAX_PATH_LENGTH];
 		return !fs_rename(GetPath(Type, pOldFilename, aOldBuffer, sizeof(aOldBuffer)), GetPath(Type, pNewFilename, aNewBuffer, sizeof (aNewBuffer)));
 	}
 
@@ -513,7 +554,7 @@ public:
 		if(Type < 0 || Type >= m_NumPaths)
 			return false;
 
-		char aBuffer[MAX_PATH_LENGTH];
+		char aBuffer[IO_MAX_PATH_LENGTH];
 		return !fs_makedir(GetPath(Type, pFoldername, aBuffer, sizeof(aBuffer)));
 	}
 
@@ -528,7 +569,7 @@ public:
 
 		GetPath(Type, pDir, pBuffer, BufferSize);
 	}
-	
+
 	virtual bool GetHashAndSize(const char *pFilename, int StorageType, SHA256_DIGEST *pSha256, unsigned *pCrc, unsigned *pSize)
 	{
 		IOHANDLE File = OpenFile(pFilename, IOFLAG_READ, StorageType);
@@ -557,6 +598,14 @@ public:
 		*pCrc = Crc;
 		*pSize = Size;
 		return true;
+	}
+
+	virtual bool GetFileTime(const char *pFilename, int StorageType, time_t *pCreated, time_t *pModified)
+	{
+		char aBuf[IO_MAX_PATH_LENGTH];
+		GetCompletePath(StorageType, pFilename, aBuf, sizeof(aBuf));
+
+		return !fs_file_time(aBuf, pCreated, pModified);
 	}
 
 	static IStorage *Create(const char *pApplicationName, int StorageType, int NumArgs, const char **ppArguments)

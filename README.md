@@ -1,9 +1,11 @@
 # catch64
-![GitHub Actions](https://github.com/AssassinTee/catch64/workflows/Build/badge.svg)
-[![release version](https://img.shields.io/github/release/AssassinTee/catch64.svg?style=flat)](https://github.com/AssassinTee/catch64/releases)
-![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.4-brightgreen.svg)
+[![Actions Status](https://github.com/AssassinTee/catch64/workflows/All%20OS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
+[![release version](https://img.shields.io/badge/releases-Unix%20%7C%20Windows%20%7C%20MacOS-brightgreen)](https://github.com/AssassinTee/catch64/releases)
+![Teeworlds version](https://img.shields.io/badge/Teeworlds-0.7.5-brightgreen.svg)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/AssassinTee/catch64/issues)
-> _"0.7.4 - Now supports more skins"_
+
+![Nice](https://i.imgur.com/nhr0NEl.png)
+![haha](https://i.imgur.com/PNYZgvm.png)
 
 ## Description
 catch64 is a -Mod for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
@@ -48,13 +50,17 @@ sudo brew install cmake freetype sdl2
 
 ## Variables
 
-| command                 | default | min | max  | description                        |
-| ----------------------- | ------- | --- | ---- | ---------------------------------- |
-| sv_allow_pickups        | 0       | 0   | 1    | Spawn hearts and shields           |
-| sv_allow_weapon_pickups | 0       | 0   | 1    | Spawn weapons                      |
-| sv_selfkill_cooldown    | 15      | 3   | 9999 | Cooldown after selfkill            |
-| sv_win_bonus            | 5       | 0   | 9999 | Bonus for winning a round          |
-| sv_min_grenade_damage   | 4       | 0   | 6    | Minimum damage required for a kill |
+| command                   | default | min | max  | description                         |
+| ------------------------- | ------- | --- | ---- | ----------------------------------- |
+| sv_allow_pickups          | 0       | 0   | 1    | Spawn hearts and shields            |
+| sv_allow_weapon_pickups   | 0       | 0   | 1    | Spawn weapons                       |
+| sv_selfkill_cooldown      | 15      | 3   | 9999 | Cooldown after selfkill             |
+| sv_win_bonus              | 5       | 0   | 9999 | Bonus for winning a round           |
+| sv_min_grenade_damage     | 4       | 0   | 6    | Minimum damage required for a kill  |
+| sv_laser_jump             | 1       | 0   | 1    | Activate laser jumping              |
+| sv_laser_explosion_damage | 4       | 0   | 6    | Explosion damage of laser jump      |
+| sv_random_spawn           | 1       | 0   | 1    | Activates random spawns             |
+| sv_random_spawn_tries     | 100     | 0   | 9999 | Tries for players to spawn randomly |
 
 ## Contributing
 
@@ -69,4 +75,4 @@ This project is licensed under the default Teeworlds license - see [license.txt]
 
 ## Great Thanks to
 
-* Teeworlds devs for creating this game <3
+* CircleCI integration is awesome, thank you Teeworlds devs!

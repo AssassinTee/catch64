@@ -229,12 +229,15 @@ class NetObject:
 			lines += ["\t"+line for line in v.emit_declaration()]
 		lines += ["};"]
 		return lines
-	def emit_validate(self):
+	def emit_validate(self, base_item):
 		lines = ["case %s:" % self.enum_name]
 		lines += ["{"]
-		lines += ["\t%s *pObj = (%s *)pData;"%(self.struct_name, self.struct_name)]
+		lines += ["\tconst %s *pObj = (const %s *)pData;"%(self.struct_name, self.struct_name)]
 		lines += ["\tif(sizeof(*pObj) != Size) return -1;"]
-		for v in self.variables:
+		variables = self.variables
+		if base_item:
+			variables += base_item.variables
+		for v in variables:
 			lines += ["\t"+line for line in v.emit_validate()]
 		lines += ["\treturn 0;"]
 		lines += ["}"]
@@ -285,8 +288,9 @@ class NetMessage(NetObject):
 
 
 class NetVariable:
-	def __init__(self, name):
+	def __init__(self, name, default=None):
 		self.name = name
+		self.default = None if default is None else str(default)
 	def emit_declaration(self):
 		return []
 	def emit_validate(self):
@@ -318,13 +322,16 @@ class NetIntAny(NetVariable):
 	def emit_declaration(self):
 		return ["int %s;"%self.name]
 	def emit_unpack(self):
-		return ["pMsg->%s = pUnpacker->GetInt();" % self.name]
+		if self.default is None:
+			return ["pMsg->%s = pUnpacker->GetInt();" % self.name]
+		else:
+			return ["pMsg->%s = pUnpacker->GetIntOrDefault(%s);" % (self.name, self.default)]
 	def emit_pack(self):
 		return ["pPacker->AddInt(%s);" % self.name]
 
 class NetIntRange(NetIntAny):
-	def __init__(self, name, min, max):
-		NetIntAny.__init__(self,name)
+	def __init__(self, name, min, max, default=None):
+		NetIntAny.__init__(self,name,default=default)
 		self.min = str(min)
 		self.max = str(max)
 	def emit_validate(self):
@@ -351,8 +358,9 @@ class NetFlag(NetIntAny):
 		return ["if(!CheckFlag(\"%s\", pMsg->%s, %s)) break;"%(self.name, self.name, self.mask)]
 
 class NetBool(NetIntRange):
-	def __init__(self, name):
-		NetIntRange.__init__(self,name,0,1)
+	def __init__(self, name, default=None):
+		default = None if default is None else int(default)
+		NetIntRange.__init__(self,name,0,1,default=default)
 
 class NetTick(NetIntRange):
 	def __init__(self, name):

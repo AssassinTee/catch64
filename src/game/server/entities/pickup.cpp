@@ -30,7 +30,7 @@ void CPickup::Reset()
 void CPickup::Tick()
 {
 	// wait for respawn
-	if((!g_Config.m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!g_Config.m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR))
+	if((!Config()->m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!Config()->m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR))
         return;
 	if(m_SpawnTick > 0)
 	{
@@ -140,14 +140,14 @@ void CPickup::TickPaused()
 
 void CPickup::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient) || ((!g_Config.m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!g_Config.m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR)))
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient) || ((!Config()->m_SvAllowPickups && (m_Type == PICKUP_HEALTH || PICKUP_ARMOR)) || (!Config()->m_SvAllowWeaponPickups && m_Type != PICKUP_HEALTH && m_Type != PICKUP_ARMOR)))
 		return;
 
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
 	if(!pP)
 		return;
 
-	pP->m_X = (int)m_Pos.x;
-	pP->m_Y = (int)m_Pos.y;
+	pP->m_X = round_to_int(m_Pos.x);
+	pP->m_Y = round_to_int(m_Pos.y);
 	pP->m_Type = m_Type;
 }

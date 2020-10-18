@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <engine/shared/config.h>
+
 #include <generated/server_data.h>
 #include <game/server/gamecontext.h>
 
@@ -68,6 +70,11 @@ void CLaser::DoBounce()
 				m_Energy = -1;
 
 			GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
+
+			if(Config()->m_SvLaserJump)
+            {
+                GameServer()->CreateExplosion(m_Pos, m_Owner, WEAPON_LASER, Config()->m_SvLaserExplosionDamage);
+            }
 		}
 	}
 	else
@@ -88,7 +95,7 @@ void CLaser::Reset()
 
 void CLaser::Tick()
 {
-	if(Server()->Tick() > m_EvalTick+(Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/1000.0f)
+	if((Server()->Tick() - m_EvalTick) > (Server()->TickSpeed()*GameServer()->Tuning()->m_LaserBounceDelay)/1000.0f)
 		DoBounce();
 }
 
@@ -106,9 +113,9 @@ void CLaser::Snap(int SnappingClient)
 	if(!pObj)
 		return;
 
-	pObj->m_X = (int)m_Pos.x;
-	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_FromX = (int)m_From.x;
-	pObj->m_FromY = (int)m_From.y;
+	pObj->m_X = round_to_int(m_Pos.x);
+	pObj->m_Y = round_to_int(m_Pos.y);
+	pObj->m_FromX = round_to_int(m_From.x);
+	pObj->m_FromY = round_to_int(m_From.y);
 	pObj->m_StartTick = m_EvalTick;
 }

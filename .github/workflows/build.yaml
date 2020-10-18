@@ -1,6 +1,6 @@
 name: Build
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build-cmake:
@@ -40,12 +40,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      shell: bash
-      run: |
-        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-        git submodule sync --recursive
-        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+      with:
+        submodules: true
 
     - name: Prepare Linux
       if: contains(matrix.os, 'ubuntu')
@@ -57,7 +53,7 @@ jobs:
       if: contains(matrix.os, 'macOS')
       run: |
         brew update
-        brew install pkg-config freetype sdl2
+        brew install pkg-config sdl2
 
     - name: Build in debug mode
       env: ${{ matrix.env }}
@@ -107,12 +103,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      shell: bash
-      run: |
-        auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-        git submodule sync --recursive
-        git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+      with:
+        submodules: true
 
     - name: Checkout bam
       uses: actions/checkout@v2
@@ -133,7 +125,7 @@ jobs:
       if: contains(matrix.os, 'macOS')
       run: |
         brew update
-        brew install freetype sdl2
+        brew install sdl2
         cd bam
         ./make_unix.sh
 
@@ -152,3 +144,8 @@ jobs:
       run: ./bam/bam conf=release all
     - name: Test release
       run: ./build/x86_64/release/teeworlds_srv shutdown
+
+    - name: Create MacOS app using make_release.py
+      if: contains(matrix.os, 'macOS')
+      run: |
+        sudo python3 scripts/make_release.py master osx

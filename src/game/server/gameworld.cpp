@@ -14,6 +14,7 @@
 CGameWorld::CGameWorld()
 {
 	m_pGameServer = 0x0;
+	m_pConfig = 0x0;
 	m_pServer = 0x0;
 
 	m_Paused = false;
@@ -33,6 +34,7 @@ CGameWorld::~CGameWorld()
 void CGameWorld::SetGameServer(CGameContext *pGameServer)
 {
 	m_pGameServer = pGameServer;
+	m_pConfig = m_pGameServer->Config();
 	m_pServer = m_pGameServer->Server();
 }
 
@@ -166,7 +168,18 @@ void CGameWorld::Tick()
 	if(m_ResetRequested)
 		Reset();
 
-	if(!m_Paused)
+	if(m_Paused || GameServer()->m_pController->IsGamePaused())
+	{
+		// update all objects
+		for(int i = 0; i < NUM_ENTTYPES; i++)
+			for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
+			{
+				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
+				pEnt->TickPaused();
+				pEnt = m_pNextTraverseEntity;
+			}
+	}
+	else
 	{
 		// update all objects
 		for(int i = 0; i < NUM_ENTTYPES; i++)
@@ -182,17 +195,6 @@ void CGameWorld::Tick()
 			{
 				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
 				pEnt->TickDefered();
-				pEnt = m_pNextTraverseEntity;
-			}
-	}
-	else if(GameServer()->m_pController->IsGamePaused())
-	{
-		// update all objects
-		for(int i = 0; i < NUM_ENTTYPES; i++)
-			for(CEntity *pEnt = m_apFirstEntityTypes[i]; pEnt; )
-			{
-				m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
-				pEnt->TickPaused();
 				pEnt = m_pNextTraverseEntity;
 			}
 	}

@@ -11,10 +11,7 @@ class CMapLayers : public CComponent
 	IEngineMap *m_pMenuMap;
 
 	int m_Type;
-	int m_CurrentLocalTick;
-	int m_LastLocalTick;
 	float m_OnlineStartTime;
-	bool m_EnvelopeUpdate;
 
 	array<CEnvPoint> m_lEnvPoints;
 	array<CEnvPoint> m_lEnvPointsMenu;
@@ -28,6 +25,8 @@ class CMapLayers : public CComponent
 	void LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints);
 	void LoadBackgroundMap();
 
+	void PlaceEasterEggs(const CLayers *pLayers);
+
 public:
 	enum
 	{
@@ -37,12 +36,11 @@ public:
 
 	CMapLayers(int Type);
 	virtual void OnStateChange(int NewState, int OldState);
+	virtual int GetInitAmount() const;
 	virtual void OnInit();
 	virtual void OnShutdown();
 	virtual void OnRender();
 	virtual void OnMapLoad();
-
-	void EnvelopeUpdate();
 
 	static void ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
