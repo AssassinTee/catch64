@@ -61,6 +61,7 @@ sudo brew install cmake freetype sdl2
 | sv_laser_explosion_damage | 4       | 0   | 6    | Explosion damage of laser jump      |
 | sv_random_spawn           | 1       | 0   | 1    | Activates random spawns             |
 | sv_random_spawn_tries     | 100     | 0   | 9999 | Tries for players to spawn randomly |
+| sv_random_spawn_max_score | 100     | 0   | 9999 | Tries for players to spawn randomly |
 
 ## Contributing
 

@@ -1159,7 +1159,9 @@ void IGameController::EvaluateSpawnRandom(CSpawnEval *pEval) const
                 continue;	// try next spawn point
 
             vec2 P = m_aaSpawnPoints[spawn_type][spawn_id]+Positions[Result];
-            float S = pEval->m_RandomSpawn ? random_int() : EvaluateSpawnPos(pEval, P);
+            float S = EvaluateSpawnPos(pEval, P);
+            if(S > Config()->m_SvRandomSpawnMaxScore/1000.0f)
+            	continue;
             if(!pEval->m_Got || pEval->m_Score > S)
             {
                 pEval->m_Got = true;
