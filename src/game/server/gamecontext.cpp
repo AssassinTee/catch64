@@ -396,7 +396,7 @@ void CGameContext::TestColor(int ColorID)
     SendSkinChange(ClientID, -1);
 
     char aBuf[128];
-    str_format(aBuf, sizeof(aBuf), "ColorID: '%d', ColorName: '%s'", ColorID, TeamHandler::getInstance().GetTeamName(ColorID));
+    str_format(aBuf, sizeof(aBuf), "ColorID: '%d', ColorName: '%s'", ColorID, TeamHandler::getInstance().GetTeamName(ColorID).c_str());
     SendBroadcast(aBuf, -1);
 }
 

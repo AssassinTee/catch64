@@ -152,6 +152,7 @@ MACRO_CONFIG_INT(SvLaserExplosionDamage, sv_laser_explosion_damage, 4, 0, 6, CFG
 
 MACRO_CONFIG_INT(SvRandomSpawn, sv_random_spawn, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Activate Random Spawning");
 MACRO_CONFIG_INT(SvRandomSpawnTries, sv_random_spawn_tries, 100, 1, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Tries for random spawn per player per tick");
+MACRO_CONFIG_INT(SvRandomSpawnMaxScore, sv_random_spawn_max_score, 10, 0, 1000, CFGFLAG_SAVE|CFGFLAG_SERVER, "Random spawn max allowed score");
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

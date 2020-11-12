@@ -51,28 +51,28 @@ int TeamHandler::GetHValue(int ClientID)
     return 0;
 }
 
-const char* TeamHandler::GetTeamName(int ClientID)
+std::string TeamHandler::GetTeamName(int ClientID)
 {
     std::string basicname = GetBasicColorName(ClientID);
     if(ClientID < 16)
-        return basicname.c_str();
+        return basicname;
     else if(ClientID < 32)
     {
         basicname+="-";
         basicname+="white";
-        return basicname.c_str();
+        return basicname;
     }
     else if(ClientID < 48)
     {
         std::string res = "black-";
         res+=basicname;
-        return res.c_str();
+        return res;
     }
     else
     {
         std::string res = "white-";
         res+=basicname;
-        return res.c_str();
+        return res;
     }
 }
 

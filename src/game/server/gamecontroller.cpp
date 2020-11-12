@@ -658,7 +658,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
                 GameServer()->m_apPlayers[m_TopTeam]->m_Score+=Config()->m_SvWinBonus;
                 char colorbuf[5];
                 TeamHandler::getInstance().HSLtoRGBString(m_TopTeam, colorbuf);
-                str_format(aBuf, sizeof(aBuf), "%s■■■^999 Team '%s' of player '%s' won the round! %s■■■", colorbuf, TeamHandler::getInstance().GetTeamName(m_TopTeam), Server()->ClientName(m_TopTeam), colorbuf);
+                str_format(aBuf, sizeof(aBuf), "%s■■■^999 Team '%s' of player '%s' won the round! %s■■■", colorbuf, TeamHandler::getInstance().GetTeamName(m_TopTeam).c_str(), Server()->ClientName(m_TopTeam), colorbuf);
 
                 GameServer()->SendBroadcast(aBuf, -1);
 			}
@@ -1159,7 +1159,9 @@ void IGameController::EvaluateSpawnRandom(CSpawnEval *pEval) const
                 continue;	// try next spawn point
 
             vec2 P = m_aaSpawnPoints[spawn_type][spawn_id]+Positions[Result];
-            float S = pEval->m_RandomSpawn ? random_int() : EvaluateSpawnPos(pEval, P);
+            float S = EvaluateSpawnPos(pEval, P);
+            if(S > Config()->m_SvRandomSpawnMaxScore/1000.0f)
+            	continue;
             if(!pEval->m_Got || pEval->m_Score > S)
             {
                 pEval->m_Got = true;
