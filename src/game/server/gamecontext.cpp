@@ -1240,15 +1240,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) {
 			CNetMsg_Cl_SkinChange *pMsg = (CNetMsg_Cl_SkinChange *) pRawMsg;
 
 			for (int p = 0; p < NUM_SKINPARTS; p++) {
-				str_utf8_copy_num(pPlayer->m_TeeInfos.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p],
-								  sizeof(pPlayer->m_TeeInfos.m_aaSkinPartNames[p]), MAX_SKIN_LENGTH);
-				pPlayer->m_TeeInfos.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
-				pPlayer->m_TeeInfos.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
+				str_utf8_copy_num(pPlayer->m_TeeInfosOriginal.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p],
+								  sizeof(pPlayer->m_TeeInfosOriginal.m_aaSkinPartNames[p]), MAX_SKIN_LENGTH);
+				pPlayer->m_TeeInfosOriginal.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
+				pPlayer->m_TeeInfosOriginal.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
 			}
 			ApplyStartColors(ClientID, pPlayer->m_TeeInfosOriginal);//does change feet and body colors of original skin
 			SendServerInfo("Your skinchange will apply next round", ClientID);
-
-			m_pController->OnPlayerInfoChange(pPlayer);
 		} else if (MsgID == NETMSGTYPE_CL_COMMAND) {
 			CNetMsg_Cl_Command *pMsg = (CNetMsg_Cl_Command *) pRawMsg;
 			CommandManager()->OnCommand(pMsg->m_Name, pMsg->m_Arguments, ClientID);
