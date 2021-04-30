@@ -884,11 +884,18 @@ void CGameContext::SetStartTeam(int ClientID) {
 	if (currentmax > 1 && !resultteams.empty()) {
 		int randomteam = resultteams[rand() % (resultteams.size())];
 		m_apPlayers[ClientID]->SetTeamID(randomteam);
-		copy_skin(m_apPlayers[ClientID]->m_TeeInfos, m_apPlayers[randomteam]->m_TeeInfosOriginal);
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "set startteam of player '%s' to '%d'", Server()->ClientName(ClientID),
-				   randomteam);
-		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
+
+		//find a player with the right team
+		for (auto &player : m_apPlayers) {
+			if (player && player->GetTeamID() == randomteam) {
+				copy_skin(m_apPlayers[ClientID]->m_TeeInfos, player->m_TeeInfos);
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "set startteam of player '%s' to '%d'",
+						   Server()->ClientName(ClientID), randomteam);
+				Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "server", aBuf);
+				return;
+			}
+		}
 	}
 }
 
