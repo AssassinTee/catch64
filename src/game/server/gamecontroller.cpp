@@ -445,6 +445,13 @@ void IGameController::ResetGame() {
 
 	CheckGameInfo();
 
+	// party mode switch start weapon
+	if (Config()->m_SvPartyMode) {
+		// select random next weapon, but never last one
+		m_StartWeapon += (rand() % (5 - 1)) + 1; // random in [1, 4]
+		m_StartWeapon %= 5;
+	}
+
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
 		if (GameServer()->m_apPlayers[i]) {
 			GameServer()->ResetSkin(i);
