@@ -1360,6 +1360,13 @@ void IGameController::RegisterChatCommands(CCommandManager *pManager)
 	AddCommand("info", "", "show authors and mod description", ComInfo);
 }*/
 
+void IGameController::RegisterChatCommands(CCommandManager *pManager)
+{
+	//pManager->AddCommand("test", "Test the command system", "r", Com_Example, this);
+	pManager->AddCommand("help", "How does this mod work", "", ComHelp, this);
+	pManager->AddCommand("info", "About page", "", ComInfo, this);
+}
+
 void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
 {
 	CNetMsg_Sv_Chat Msg;
@@ -1374,17 +1381,23 @@ void IGameController::ComSendMessageList(std::vector<std::string>& messageList, 
     }
 }
 
-void IGameController::ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
+void IGameController::ComHelp(IConsole::IResult *pResult, void *pContext)
 {
+	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
+	auto *pSelf = (IGameController *)pComContext->m_pContext;
+
 	std::vector<std::string> helplist = {"###Help###",
 		"You start in your team",
 		"If you hit a player, he is in your team, too",
 		"Very easy :D"};
-	pGameController->ComSendMessageList(helplist, pPlayer->GetCID());
+	pSelf->ComSendMessageList(helplist, pComContext->m_ClientID);
 }
 
-void IGameController::ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs)
+void IGameController::ComInfo(IConsole::IResult *pResult, void *pContext)
 {
+	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
+	auto *pSelf = (IGameController *)pComContext->m_pContext;
+
 	std::vector<std::string> infolist = {"###Info###",
 		"Catch64 by AssassinTee",
 		"You like it? Give me a Star on GitHub!",
@@ -1393,5 +1406,5 @@ void IGameController::ComInfo(class IGameController* pGameController, class CPla
 	std::stringstream ss;
     ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
     infolist.push_back(ss.str());
-	pGameController->ComSendMessageList(infolist, pPlayer->GetCID());
+	pSelf->ComSendMessageList(infolist, pComContext->m_ClientID);
 }
