@@ -154,6 +154,8 @@ MACRO_CONFIG_INT(SvRandomSpawn, sv_random_spawn, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_S
 MACRO_CONFIG_INT(SvRandomSpawnTries, sv_random_spawn_tries, 100, 1, 9999, CFGFLAG_SAVE|CFGFLAG_SERVER, "Tries for random spawn per player per tick");
 MACRO_CONFIG_INT(SvRandomSpawnMaxScore, sv_random_spawn_max_score, 10, 0, 1000, CFGFLAG_SAVE|CFGFLAG_SERVER, "Random spawn max allowed score");
 
+MACRO_CONFIG_INT(SvPartyMode, sv_party_mode, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Random Weapons each round");
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")
