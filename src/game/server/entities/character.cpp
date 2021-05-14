@@ -53,15 +53,19 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos) {
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = (int) GameServer()->m_pController->GetStartWeapon();
-	m_LastWeapon = (int) GameServer()->m_pController->GetStartWeapon();
+	int start_weapon = (int) GameServer()->m_pController->GetStartWeapon();
 
 	// Handle weapon hook
-	if (m_ActiveWeapon >= NUM_WEAPONS)
+	if (start_weapon >= NUM_WEAPONS)
 	{
-		m_ActiveWeapon = 0;
-		m_LastWeapon = 0;
+		m_ActiveWeapon = WEAPON_HAMMER;
+		m_LastWeapon = WEAPON_HAMMER;
 		m_aWeapons[WEAPON_HAMMER].m_Ammo = 0;
+	}
+	else
+	{
+		m_ActiveWeapon = start_weapon;
+		m_LastWeapon = start_weapon;
 	}
 	m_QueuedWeapon = -1;
 
@@ -94,29 +98,38 @@ void CCharacter::SetWeapon(int W) {
 	if (W == m_ActiveWeapon)
 		return;
 
-	m_LastWeapon = m_ActiveWeapon;
-	m_QueuedWeapon = -1;
-	m_ActiveWeapon = W;
 	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
 	if (m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS) {
-		m_ActiveWeapon = 0;
+		m_ActiveWeapon = WEAPON_HAMMER;
+		m_LastWeapon = WEAPON_HAMMER;
 		m_aWeapons[m_ActiveWeapon].m_Ammo = 0;
 	}
-
+	else
+	{
+		m_LastWeapon = m_ActiveWeapon;
+		m_QueuedWeapon = -1;
+		m_ActiveWeapon = W;
+	}
 	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 
 void CCharacter::SetActiveWeapon(int W) {
-	if (m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
+	if (m_ActiveWeapon < 0 || m_ActiveWeapon > NUM_WEAPONS)
 		return;
+	int ammo = -1;
+	if (W == NUM_WEAPONS)
+	{
+		W = WEAPON_HAMMER;
+		ammo = 0;
+	}
 	m_LastWeapon = W;
 	m_ActiveWeapon = W;
 	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 	for (int i = 0; i < NUM_WEAPONS; ++i)
 		m_aWeapons[i].m_Got = false;
 	m_aWeapons[W].m_Got = true;
-	m_aWeapons[W].m_Ammo = -1;
+	m_aWeapons[W].m_Ammo = ammo;
 	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 
@@ -291,7 +304,8 @@ void CCharacter::FireWeapon() {
 		// 125ms is a magical limit of how fast a human can click
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
 		if (m_LastNoAmmoSound + Server()->TickSpeed() <= Server()->Tick()) {
-			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+			if (m_ActiveWeapon != WEAPON_HAMMER)
+				GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
 			m_LastNoAmmoSound = Server()->Tick();
 		}
 		return;
@@ -462,6 +476,11 @@ void CCharacter::HandleWeapons() {
 }
 
 bool CCharacter::GiveWeapon(int Weapon, int Ammo) {
+	if (Weapon >= NUM_WEAPONS)
+	{
+		Weapon = WEAPON_HAMMER;
+		Ammo = 0;
+	}
 	if (m_aWeapons[Weapon].m_Ammo < g_pData->m_Weapons.m_aId[Weapon].m_Maxammo || !m_aWeapons[Weapon].m_Got) {
 		m_aWeapons[Weapon].m_Got = true;
 		m_aWeapons[Weapon].m_Ammo = min(g_pData->m_Weapons.m_aId[Weapon].m_Maxammo, Ammo);
@@ -661,7 +680,8 @@ void CCharacter::Die(int Killer, int Weapon) {
 	// we got to wait 0.5 secs before respawning
 	//m_Alive = false;
 	//m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-	if (Weapon == WEAPON_WORLD || Weapon == WEAPON_GAME || Weapon == WEAPON_SELF) {
+	bool DeathByGame = Weapon == WEAPON_WORLD || (Weapon == WEAPON_GAME && Killer < 0) || Weapon == WEAPON_SELF;
+	if (DeathByGame) {
 		m_Alive = false;
 		m_pPlayer->m_RespawnTick = Server()->Tick() + Server()->TickSpeed() / 2;
 	}
@@ -707,7 +727,7 @@ void CCharacter::Die(int Killer, int Weapon) {
 	//GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 
 	// this is for auto respawn after 3 secs
-	if (Weapon == WEAPON_WORLD || Weapon == WEAPON_GAME || Weapon == WEAPON_SELF) {
+	if (DeathByGame) {
 		m_pPlayer->m_DieTick = Server()->Tick();
 
 		GameServer()->m_World.RemoveEntity(this);
