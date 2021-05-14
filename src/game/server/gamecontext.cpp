@@ -1020,6 +1020,19 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) {
 								pPlayer->m_LastChat + Server()->TickSpeed() * (Length / 20) > Server()->Tick()))
 				return;
 
+			if (pMsg->m_pMessage[0] == '/') {
+				const char *command = pMsg->m_pMessage+1;
+				if (CommandManager()->GetCommand(command)) {
+					CommandManager()->OnCommand(command, "", ClientID);
+				}
+				else {
+					char aNoCommand[128];
+					str_format(aNoCommand, sizeof(aNoCommand), "Unknown command '%s'", command);
+					SendServerInfo(aNoCommand, ClientID);
+				}
+				return;
+			}
+
 			pPlayer->m_LastChat = Server()->Tick();
 
 			// don't allow spectators to disturb players during a running game in tournament mode
@@ -1713,7 +1726,7 @@ void CGameContext::OnInit() {
 	m_pController = new CGameControllerCatch64(this);
 
 	// IDK how this works now
-	//m_pController->RegisterChatCommands(CommandManager());
+	m_pController->RegisterChatCommands(CommandManager());
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
