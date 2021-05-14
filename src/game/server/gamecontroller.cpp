@@ -1180,72 +1180,15 @@ int IGameController::GetStartTeam() {
 	return TEAM_SPECTATORS;
 }
 
-/*void IGameController::Com_Example(IConsole::IResult *pResult, void *pContext)
-{
-	CCommandManager::SCommandContext *pComContext = (CCommandManager::SCommandContext *)pContext;
-	IGameController *pSelf = (IGameController *)pComContext->m_pContext;
-
-<<<<<<< HEAD
-	if(pCommand)
-	{
-		mem_zero(pCommand, sizeof(CChatCommand));
-	}
-}
-
-IGameController::CChatCommand *IGameController::CChatCommands::GetCommand(const char *pName)
-{
-	for(int i = 0; i < MAX_COMMANDS; i++)
-	{
-		if(m_aCommands[i].m_Used && str_comp(m_aCommands[i].m_aName, pName) == 0)
-		{
-			return &m_aCommands[i];
-		}
-	}
-	return 0;
-}
-
-void IGameController::CChatCommands::OnPlayerConnect(IServer *pServer, CPlayer *pPlayer)
-{
-	for(int i = 0; i < MAX_COMMANDS; i++)
-	{
-		CChatCommand *pCommand = &m_aCommands[i];
-
-		if(pCommand->m_Used)
-		{
-			CNetMsg_Sv_CommandInfo Msg;
-			Msg.m_pName = pCommand->m_aName;
-			Msg.m_HelpText = pCommand->m_aHelpText;
-			Msg.m_ArgsFormat = pCommand->m_aArgsFormat;
-
-			pServer->SendPackMsg(&Msg, MSGFLAG_VITAL, pPlayer->GetCID());
-		}
-	}
-}
-
-void IGameController::OnPlayerCommand(CPlayer *pPlayer, const char *pCommandName, const char *pCommandArgs)
-{
-	// TODO: Add a argument parser?
-	CChatCommand *pCommand = CommandsManager()->GetCommand(pCommandName);
-
-	if(pCommand)
-		pCommand->m_pfnCallback(this, pPlayer, pCommandArgs);
-}
-=======
-	pSelf->GameServer()->SendBroadcast(pResult->GetString(0), -1);
-}*/
-
-/*
->>>>>>> 662f84d4a358afb20eba2aeb98e4f89bb84bfebc
-
 void IGameController::RegisterChatCommands(CCommandManager *pManager)
 {
-<<<<<<< HEAD
-	//AddCommand("example", "si", "I am a description", Com_Example);
-	AddCommand("help", "", "how to play", ComHelp);
-	AddCommand("info", "", "show authors and mod description", ComInfo);
-}*/
+	//pManager->AddCommand("test", "Test the command system", "r", Com_Example, this);
+	pManager->AddCommand("help", "How does this mod work", "", ComHelp, this);
+	pManager->AddCommand("info", "About page", "", ComInfo, this);
+}
 
-void IGameController::ComSendMessageList(std::vector<std::string> &messageList, const int ClientID) {
+void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
+{
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = CHAT_ALL;
 	Msg.m_ClientID = -1;
@@ -1257,22 +1200,30 @@ void IGameController::ComSendMessageList(std::vector<std::string> &messageList, 
 	}
 }
 
-void IGameController::ComHelp(class IGameController *pGameController, class CPlayer *pPlayer, const char *pArgs) {
+void IGameController::ComHelp(IConsole::IResult *pResult, void *pContext)
+{
+	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
+	auto *pSelf = (IGameController *)pComContext->m_pContext;
+
 	std::vector<std::string> helplist = {"###Help###",
-										 "You start in your team",
-										 "If you hit a player, he is in your team, too",
-										 "Very easy :D"};
-	pGameController->ComSendMessageList(helplist, pPlayer->GetCID());
+		"You start in your team",
+		"If you hit a player, he is in your team, too",
+		"Very easy :D"};
+	pSelf->ComSendMessageList(helplist, pComContext->m_ClientID);
 }
 
-void IGameController::ComInfo(class IGameController *pGameController, class CPlayer *pPlayer, const char *pArgs) {
+void IGameController::ComInfo(IConsole::IResult *pResult, void *pContext)
+{
+	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
+	auto *pSelf = (IGameController *)pComContext->m_pContext;
+
 	std::vector<std::string> infolist = {"###Info###",
 										 "Catch64 by AssassinTee",
 										 "You like it? Give me a Star on GitHub!",
 										 "https://github.com/AssassinTee/catch64",
 										 "You should use Client 0.7.3 or higher!"};
 	std::stringstream ss;
-	ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
-	infolist.push_back(ss.str());
-	pGameController->ComSendMessageList(infolist, pPlayer->GetCID());
+    ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
+    infolist.push_back(ss.str());
+	pSelf->ComSendMessageList(infolist, pComContext->m_ClientID);
 }

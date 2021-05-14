@@ -134,8 +134,6 @@ protected:
 	int m_TopscoreCount;
 
 	void ComSendMessageList(std::vector<std::string>& messageList, const int ClientID);
-	void ComHelp(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
-	void ComInfo(class IGameController* pGameController, class CPlayer *pPlayer, const char *pArgs);
 
 
 public:
@@ -183,7 +181,7 @@ public:
 	void OnPlayerDisconnect(class CPlayer *pPlayer);
 	void OnPlayerInfoChange(class CPlayer *pPlayer);
 	void OnPlayerReadyChange(class CPlayer *pPlayer);
-	void OnPlayerCommand(class CPlayer *pPlayer, const char *pCommandName, const char *pCommandArgs);
+	// void OnPlayerCommand(class CPlayer *pPlayer, const char *pCommandName, const char *pCommandArgs);
 
 	void OnReset();
 
@@ -248,7 +246,11 @@ public:
 	int GetStartWeapon(){ return m_StartWeapon;}
 
 	//static void Com_Example(IConsole::IResult *pResult, void *pContext);
-	//virtual void RegisterChatCommands(CCommandManager *pManager);
+	virtual void RegisterChatCommands(CCommandManager *pManager);
+
+	// chat commands
+	static void ComHelp(IConsole::IResult *pResult, void *pContext);
+	static void ComInfo(IConsole::IResult *pResult, void *pContext);
 };
 
 #endif
