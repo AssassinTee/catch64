@@ -235,7 +235,10 @@ void IGameController::OnCharacterSpawn(CCharacter *pChr) {
 	pChr->IncreaseHealth(10);
 
 	int Weapon = m_StartWeapon;
-	pChr->GiveWeapon(Weapon, -1);
+	if (Weapon == NUM_WEAPONS)
+		pChr->GiveWeapon(WEAPON_HAMMER, 0);
+	else
+		pChr->GiveWeapon(Weapon, -1);
 }
 
 void IGameController::OnFlagReturn(CFlag *pFlag) {
@@ -448,8 +451,9 @@ void IGameController::ResetGame() {
 	// party mode switch start weapon
 	if (Config()->m_SvPartyMode) {
 		// select random next weapon, but never last one
-		m_StartWeapon += (rand() % (NUM_WEAPONS - 1)) + 1; // random in [1, 4]
-		m_StartWeapon %= NUM_WEAPONS;
+		const int NumStartWeapons = NUM_WEAPONS + 1;
+		m_StartWeapon += (rand() % (NumStartWeapons - 1)) + 1; // random in [1, NumStartWeapons]
+		m_StartWeapon %= NumStartWeapons;
 	}
 
 	for (int i = 0; i < MAX_CLIENTS; ++i) {
@@ -1180,15 +1184,13 @@ int IGameController::GetStartTeam() {
 	return TEAM_SPECTATORS;
 }
 
-void IGameController::RegisterChatCommands(CCommandManager *pManager)
-{
+void IGameController::RegisterChatCommands(CCommandManager *pManager) {
 	//pManager->AddCommand("test", "Test the command system", "r", Com_Example, this);
 	pManager->AddCommand("help", "How does this mod work", "", ComHelp, this);
 	pManager->AddCommand("info", "About page", "", ComInfo, this);
 }
 
-void IGameController::ComSendMessageList(std::vector<std::string>& messageList, const int ClientID)
-{
+void IGameController::ComSendMessageList(std::vector<std::string> &messageList, const int ClientID) {
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Mode = CHAT_ALL;
 	Msg.m_ClientID = -1;
@@ -1200,22 +1202,20 @@ void IGameController::ComSendMessageList(std::vector<std::string>& messageList, 
 	}
 }
 
-void IGameController::ComHelp(IConsole::IResult *pResult, void *pContext)
-{
-	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
-	auto *pSelf = (IGameController *)pComContext->m_pContext;
+void IGameController::ComHelp(IConsole::IResult *pResult, void *pContext) {
+	auto *pComContext = (CCommandManager::SCommandContext *) pContext;
+	auto *pSelf = (IGameController *) pComContext->m_pContext;
 
 	std::vector<std::string> helplist = {"###Help###",
-		"You start in your team",
-		"If you hit a player, he is in your team, too",
-		"Very easy :D"};
+										 "You start in your team",
+										 "If you hit a player, he is in your team, too",
+										 "Very easy :D"};
 	pSelf->ComSendMessageList(helplist, pComContext->m_ClientID);
 }
 
-void IGameController::ComInfo(IConsole::IResult *pResult, void *pContext)
-{
-	auto *pComContext = (CCommandManager::SCommandContext *)pContext;
-	auto *pSelf = (IGameController *)pComContext->m_pContext;
+void IGameController::ComInfo(IConsole::IResult *pResult, void *pContext) {
+	auto *pComContext = (CCommandManager::SCommandContext *) pContext;
+	auto *pSelf = (IGameController *) pComContext->m_pContext;
 
 	std::vector<std::string> infolist = {"###Info###",
 										 "Catch64 by AssassinTee",
@@ -1223,7 +1223,7 @@ void IGameController::ComInfo(IConsole::IResult *pResult, void *pContext)
 										 "https://github.com/AssassinTee/catch64",
 										 "You should use Client 0.7.3 or higher!"};
 	std::stringstream ss;
-    ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
-    infolist.push_back(ss.str());
+	ss << "Teeworlds version: '" << GAME_RELEASE_VERSION << "', Catch64 Version: '" << CATCH_VERSION << "'";
+	infolist.push_back(ss.str());
 	pSelf->ComSendMessageList(infolist, pComContext->m_ClientID);
 }

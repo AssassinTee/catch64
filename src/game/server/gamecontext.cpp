@@ -1648,8 +1648,10 @@ void CGameContext::ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUse
 void CGameContext::ConStartWeapon(IConsole::IResult *pResult, void *pUserData) {
 	CGameContext *pSelf = (CGameContext *) pUserData;
 	int StartWeapon = pResult->GetInteger(0);
-	if (StartWeapon < 0 || StartWeapon >= NUM_WEAPONS)
+
+	if (StartWeapon < 0 || StartWeapon > NUM_WEAPONS)  // weapon at NUM_WEAPONS is HOOK!
 		StartWeapon = 0;
+
 	pSelf->SetStartWeapon(StartWeapon);
 
 	for (int i = 0; i < MAX_CLIENTS; ++i)
