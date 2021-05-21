@@ -8,7 +8,7 @@
 ![haha](https://i.imgur.com/PNYZgvm.png)
 
 ## Description
-catch64 is a -Mod for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
+catch64 is a modification for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
 It is written for Teeworlds 0.7 and supports 64 players.
 If you hit someone, he is in your team and gets your colors and skin.
 If he hits someone, the hit player is in your team, too.
@@ -63,6 +63,22 @@ sudo brew install cmake freetype sdl2
 | sv_random_spawn_tries     | 100     | 0   | 9999 | Tries for players to spawn randomly |
 | sv_random_spawn_max_score | 100     | 0   | 9999 | Tries for players to spawn randomly |
 | sv_party_mode             | 0       | 0   | 1    | Random Weapons each round           |
+
+## Weapons
+
+You can change the weapon with `start_weapon <WeaponID>`
+
+**Note**: if you have turned on `sv_party_mode`, the weapon will switch next round!
+
+| WeaponID | Weapon      |
+| -------- | ----------  |
+| 0        | Hammer      |
+| 1        | Gun         |
+| 2        | Shotgun     |
+| 3        | Grenade     |
+| 4        | Rifle/Laser |
+| 5        | Ninja       |
+| 6        | Hook        |
 
 ## Contributing
 
