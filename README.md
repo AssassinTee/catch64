@@ -8,7 +8,7 @@
 ![haha](https://i.imgur.com/PNYZgvm.png)
 
 ## Description
-catch64 is a modification for the retro-multiplayergame [Teeworlds](www.teeworlds.com).
+catch64 is a modification for the retro-multiplayergame [Teeworlds](https://github.com/teeworlds/teeworlds).
 It is written for Teeworlds 0.7 and supports 64 players.
 If you hit someone, he is in your team and gets your colors and skin.
 If he hits someone, the hit player is in your team, too.
@@ -89,7 +89,7 @@ Feel free to contribute! In the current project state every feedback is usefull
 * **AssassinTee** - Everything
 
 ## License
-This project is licensed under the default Teeworlds license - see [license.txt](https://github.com/AssassinTee/Teeworlds-Zod2/blob/master/license.txt) file for details
+This project is licensed under the default Teeworlds license - see [license.txt](https://github.com/AssassinTee/catch64/blob/master/license.txt) file for details
 
 ## Great Thanks to
 
