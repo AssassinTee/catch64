@@ -7,6 +7,10 @@
 ![Nice](https://i.imgur.com/nhr0NEl.png)
 ![haha](https://i.imgur.com/PNYZgvm.png)
 
+## Attention!
+
+Repository is archived as of 2025!
+
 ## Description
 catch64 is a modification for the retro-multiplayergame [Teeworlds](https://github.com/teeworlds/teeworlds).
 It is written for Teeworlds 0.7 and supports 64 players.
